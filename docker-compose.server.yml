@@ -1,0 +1,47 @@
+services:
+  # Бэкэнд yt-dlp + веб-клиент
+  metube:
+    image: ghcr.io/alexta69/metube:latest
+    container_name: music-downloader-backend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:8081"
+    volumes:
+      - ./my_music_folder:/downloads
+    environment:
+      - DOWNLOAD_TYPE=audio
+      - AUDIO_FORMAT=mp3
+      - OUTPUT_TEMPLATE=%(artist)s - %(title)s.%(ext)s
+
+  downtify:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: downtify:similar
+    container_name: music-search-ui
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8082:8000"
+    volumes:
+      - ./my_music_folder:/downloads
+      - ./downtify_data:/data
+    environment:
+      - DOWNTIFY_DISABLE_AUTH=false
+    depends_on:
+      - metube
+
+  # Раздатчик и стриминговый плеер для вашей скачанной музыки
+  navidrome:
+    image: deluan/navidrome:latest
+    container_name: music-streamer-server
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4533:4533"
+    volumes:
+      - ./my_music_folder:/music:ro
+      - ./navidrome_data:/data
+    environment:
+      - ND_LOGLEVEL=info
+      - ND_SCANSCHEDULE=@every 1m
+    depends_on:
+      - metube
