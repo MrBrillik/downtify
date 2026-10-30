@@ -19,6 +19,7 @@ Both are off by default and configured in **Settings**.
 |--------|-------------|
 | **YouTube Music** | The default. Searches YouTube Music, falling back to standard YouTube when there's no acceptable match — see [How it works](../how-it-works.md#fallback-to-standard-youtube). |
 | **YouTube** | Searches standard YouTube only. |
+| **SoundCloud** | Off by default. Searches SoundCloud, and downloads the exact track of a pasted SoundCloud link — see [SoundCloud](soundcloud.md). |
 | **slskd** | Searches Soulseek through slskd and downloads the best matching file. |
 
 Enabling slskd puts it first in the list. If slskd ends up being the only source, YouTube Music and YouTube are still tried after it, so a track slskd can't find still downloads. The download queue shows which source served each track.
@@ -58,11 +59,25 @@ Downtify searches slskd with the track's title and artist and ranks the results 
 
 If nothing acceptable turns up, the transfer doesn't finish within **Total timeout**, or it sits queued on the remote peer without progress for longer than **Queued timeout**, Downtify moves on to the next audio source.
 
+**Polling and resource use.**
+
+Downtify polls every 5 seconds while the requested transfer exists, and every 60 seconds when it is absent from slskd. An idle transfer can therefore take up to 60 seconds to appear in the queue progress. Timeouts still bound the wait, and cancellation is checked during the idle sleep without additional network requests.
+
+- `DOWNTIFY_POLL_INTERVAL` (default `5`): active interval in seconds (1–30). When unset, the existing `poll_interval_seconds` setting is honored.
+- `DOWNTIFY_POLL_IDLE_INTERVAL` (default `60`): interval when no matching transfer exists, in seconds (1–60).
+- `DOWNTIFY_TRANSFERS_TTL` (default `3`): lifetime of a shared transfer-list snapshot in seconds (0–60); `0` disables caching. Snapshots are isolated by server URL and API credentials, bounded to 32 entries, and invalidated after enqueue. Failed requests are not cached.
+- `DOWNTIFY_POLL_DEEP_SCAN_EVERY` (default `12`): recursive disk lookup every N ticks (1–300) when the transfer is absent. The first tick and ticks with a matching transfer also allow a deep scan. A time limit of 60 seconds between deep scans prevents idle backoff from hiding a finalized file for twelve minutes.
+
+Predictable file locations are probed every tick; throttling affects only recursive fallback searches, including renamed files. The final fallback scan, tag matching, rejected/failed transfer handling and provider fallback remain in place. Backoff does not multiply the existing attempt/time budget. Invalid environment values use the defaults and out-of-range values are bounded.
+
+`httpx` and `httpcore` request logs are restricted to WARNING. `uvicorn.access` is WARNING too, except with `--log-level DEBUG`. Downtify's own progress and failure logs remain available. Counting request log lines is not a reliable measure of HTTP traffic once INFO logs are suppressed: use the slskd-side access log or a counting test client when comparing request rates.
+
 ### Leave files in place
 
 With **Leave slskd files in place** on (the default), the downloaded file stays in the slskd folder: Downtify writes the metadata, cover art and lyrics into it there and registers it in the library under a `slskd/…` path. The Library, player and M3U files use that path, and it's served through `/media/slskd/…`.
 
 Turn it off to copy the file next to your other downloads instead, following your filename template and [file organization](file-organization.md) settings.
+The transfer itself stays in the slskd folder; [Storage & Usage](storage-usage.md#the-library-not-its-working-copies) counts these copies apart from the library, as *slskd working copies*, so you can see how much room they take.
 
 ::: info
 slskd files keep their original format — they aren't transcoded to the format chosen in Settings.
