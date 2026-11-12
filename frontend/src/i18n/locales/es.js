@@ -188,6 +188,12 @@ export default {
     remove: 'Quitar playlist de favoritos',
   },
   normalization: {
+    level: 'Nivel de volumen',
+    levelNormal: 'Normal',
+    levelLouder: 'Más alto',
+    levelMaximum: 'Máximo',
+    levelHint:
+      'El volumen aumenta dentro de los límites medidos de cada pista. Los archivos no cambian.',
     title: 'Normalización del volumen',
     hint: 'Reproduce todas las canciones con un volumen parecido, sin cambiar tus archivos de audio.',
     enable: 'Normalizar el volumen de reproducción',
@@ -503,6 +509,17 @@ export default {
     playCountYoutubeMusic: 'Reproducciones en YouTube Music (aproximado)',
   },
   queue: {
+    globalPause: 'Pausar descargas y seguimientos',
+    globalResume: 'Reanudar descargas y seguimientos',
+    globalTitle: 'Actividad del servidor',
+    globalHint:
+      'Las nuevas descargas y comprobaciones esperan. El trabajo activo termina y la cola se conserva.',
+    globalPaused: 'Descargas y seguimientos en pausa.',
+    globalDraining: 'Terminando el trabajo activo…',
+    globalRetry: 'Comprobar estado',
+    globalFailed: 'No se pudo confirmar el cambio.',
+    globalAdmin: 'Se necesita una sesión web de administrador.',
+    globalExpired: 'Sesión caducada. Inicia sesión de nuevo.',
     title: 'Cola',
     tabActive: 'En curso',
     tabQueued: 'En espera',
@@ -588,6 +605,8 @@ export default {
       artistDesc: 'Artista (Z–A)',
       albumAsc: 'Álbum (A–Z)',
       albumDesc: 'Álbum (Z–A)',
+      releaseNewest: 'Lanzamientos más recientes primero',
+      releaseOldest: 'Lanzamientos más antiguos primero',
       longest: 'Más largas primero',
       shortest: 'Más cortas primero',
     },
@@ -941,6 +960,23 @@ export default {
   },
   playlists: {
     kicker: 'Playlist',
+    diagnostics: {
+      title: 'Diagnóstico de playlist',
+      check: 'Comprobar',
+      refresh: 'Actualizar',
+      unavailable: 'El diagnóstico no está disponible para esta playlist.',
+      items: {
+        spotify_tracks: 'Canciones en Spotify',
+        downloaded: 'Descargadas por Downtify',
+        physical_files: 'Archivos encontrados',
+        track_index: 'Correspondencias en TrackIndex',
+        monitor_history: 'Historial del Monitor',
+        navidrome_matched: 'Encontradas en Navidrome',
+        navidrome_rows: 'Canciones en la playlist de Navidrome',
+        missing_files: 'Archivos ausentes',
+        orphan_files: 'Archivos huérfanos',
+      },
+    },
     notFound: 'Playlist no encontrada',
     progress: '{have} de {total} descargadas',
     missingShort: { one: 'falta {count}', other: 'faltan {count}' },
@@ -978,6 +1014,26 @@ export default {
     },
     alreadyIn: 'Ya está en «{name}»',
     removedTrack: 'Quitada de “{name}”',
+    reorder: 'Reordenar',
+    reorderHint:
+      'Arrastra las canciones o usa las flechas y guarda el nuevo orden.',
+    reorderSave: 'Guardar orden',
+    reordered: 'Orden guardado',
+    reorderStale:
+      'Alguien cambió esta playlist mientras tanto. Se ha recargado: vuelve a ordenarla.',
+    moveUp: 'Subir',
+    moveDown: 'Bajar',
+    moveTop: 'Mover al principio',
+    moveBottom: 'Mover al final',
+    repeatTitle: 'Ya está en esta playlist',
+    repeatBody: {
+      one: 'Esta canción ya está en «{name}». ¿Añadirla otra vez?',
+      other:
+        '{count} de estas canciones ya están en «{name}». ¿Añadirlas otra vez?',
+    },
+    repeatConfirm: 'Añadir de todos modos',
+    repeatCancel: 'No añadir',
+    inPlaylist: 'Ya añadida',
     hideTrack: 'Ocultar de la playlist',
     hiddenTrack: 'Oculta de “{name}”',
     hiddenTitle: {
@@ -999,6 +1055,12 @@ export default {
     nothingYet: 'Aún no hay canciones descargadas',
     nothingYetHint: 'Las canciones aparecen aquí a medida que se descargan.',
     nothingYetManualHint: 'Añade canciones de tu biblioteca.',
+    uploadCover: 'Subir portada',
+    removeCover: 'Quitar portada',
+    coverSaved: 'Portada de la playlist guardada',
+    coverRemoved: 'Portada de la playlist eliminada',
+    coverInvalid: 'Elige una imagen JPEG, PNG o WebP.',
+    coverTooLarge: 'La imagen debe ocupar 10 MiB o menos.',
   },
   track: {
     title: 'Título',
@@ -1006,6 +1068,7 @@ export default {
     album: 'Álbum',
     trackNumber: 'Pista',
     year: 'Año',
+    releaseDate: 'Fecha de lanzamiento',
     length: 'Duración',
     format: 'Formato',
     size: 'Tamaño',
@@ -1013,12 +1076,26 @@ export default {
     file: 'Archivo',
   },
   player: {
+    unlockLayout: 'Desbloquear el diseño del reproductor',
+    lockLayout: 'Bloquear el diseño del reproductor',
+    resetLayout: 'Restablecer el diseño del reproductor',
+    resizeTrackSection:
+      'Cambiar el tamaño de la sección de información de la pista',
+    resizeTransportSection:
+      'Cambiar el tamaño de la sección de controles de reproducción',
     nowPlaying: 'Reproduciendo',
     openNowPlaying: 'Abrir reproducción actual',
     closeNowPlaying: 'Cerrar reproducción actual',
     queue: 'Cola',
     upNext: 'A continuación',
     lyrics: 'Letra',
+    karaoke: 'Karaoke',
+    karaokeWindow: 'Abrir en una ventana nueva',
+    karaokeWindowBlocked:
+      'El navegador bloqueó la ventana nueva. Permite las ventanas emergentes para Downtify e inténtalo de nuevo.',
+    karaokeWaiting:
+      'Esperando una canción desde la ventana principal de Downtify',
+    fullscreen: 'Pantalla completa',
     details: 'Detalles',
     playing: 'Reproduciendo',
     play: 'Reproducir',
@@ -1439,6 +1516,21 @@ export default {
     deemixLocal: 'Same folder inside Downtify (read-only is supported)',
     deemixQuality: 'Audio quality',
     slskdTitle: 'slskd',
+    slskdFormats: 'Prioridad de formatos',
+    slskdFormatsHint:
+      'Extensiones separadas por comas, primero la de mayor prioridad (por ejemplo, flac, mp3).',
+    slskdMinBitrate: 'Bitrate mínimo para formatos con pérdida',
+    slskdMinBitrateHint:
+      'En modo estricto, se rechazan los archivos con pérdida por debajo de este valor o sin bitrate informado. FLAC está exento.',
+    slskdAttempts: 'Intentos de candidatos',
+    slskdAttemptsHint:
+      'En modo estricto, se prueban tantos candidatos por formato; de lo contrario, es el total.',
+    slskdStrictPriority: 'Prioridad estricta de formatos',
+    slskdStrictPriorityHint:
+      'Prueba cada formato en orden y clasifica las coincidencias dentro de cada uno.',
+    slskdWhitelist: 'Permitir solo los formatos indicados',
+    slskdWhitelistHint:
+      'Rechaza resultados con extensiones que no estén en la lista.',
     slskdHint:
       'Descarga de Soulseek a través de tu servidor slskd. Lo que no encuentre pasa a la siguiente fuente.',
     slskdEnabled: 'Usar slskd',
@@ -1452,7 +1544,7 @@ export default {
     slskdQueuedTimeout: 'Tiempo de espera en cola',
     slskdInPlace: 'Dejar los archivos en la carpeta de slskd',
     slskdInPlaceHint:
-      'Etiquetarlos donde slskd los guardó en lugar de copiarlos a tu carpeta de descargas.',
+      'Activado: etiqueta los archivos en su ubicación y consérvalos. Desactivado: cópialos y etiquétalos en Descargas; elimina el origen solo tras una importación correcta. Si falla, conserva el origen.',
     youtubeTitle: 'YouTube',
     cookies: 'Cookies de YouTube',
     cookiesHint:
@@ -1470,9 +1562,13 @@ export default {
     format: 'Formato',
     formatHint:
       'Los archivos descargados de YouTube se convierten a este formato.',
+    formatOriginal: 'Original',
+    formatOriginalHint:
+      'Conserva el mejor flujo de audio disponible sin volver a codificarlo. La extensión del archivo depende de la fuente.',
     bitrate: 'Calidad',
     bitrateHint: 'Tasa de bits para formatos con pérdida.',
     bitrateLossless: 'No se usa para FLAC, que es sin pérdida.',
+    bitrateOriginal: 'No se usa al conservar el formato de audio original.',
     filesGroup: 'Archivos',
     template: 'Nombre de archivo',
     templateHint: 'Usa / para crear carpetas.',
@@ -1710,9 +1806,14 @@ export default {
   auth: {
     signInTitle: 'Inicia sesión en Downtify',
     signInBody: 'Inicia sesión con tu usuario y contraseña.',
+    signInBodyOidcOnly: 'Inicia sesión con tu proveedor de identidad.',
     username: 'Usuario',
     password: 'Contraseña',
     signIn: 'Iniciar sesión',
+    oidcSignIn: 'Continuar con el proveedor de identidad',
+    or: 'o',
+    oidcFailed:
+      'No se pudo iniciar sesión con el proveedor de identidad. Inténtalo de nuevo.',
     wrongPassword: 'Usuario o contraseña incorrectos',
     tooMany: 'Demasiados intentos. Espera unos minutos y vuelve a intentarlo.',
     forgotHint:
@@ -1774,6 +1875,12 @@ export default {
     androidUnreleased:
       'Todavía no se ha publicado ninguna versión: la app sigue en desarrollo, así que por ahora no hay nada que instalar.',
     androidRepo: 'Ver el repositorio',
+    iosGroup: 'Downtify para iOS',
+    iosHint:
+      'Una app para iPhone y iPad que explora y reproduce tu biblioteca desde este servidor.',
+    iosBody:
+      'Inicia sesión con tu cuenta o vincula la app con un código de esta página. Explora y reproduce tu biblioteca, guarda canciones para escucharlas sin conexión y controla la reproducción desde la pantalla de bloqueo.',
+    iosRepo: 'Ver el repositorio',
   },
   replace: {
     menu: 'Reemplazar audio…',

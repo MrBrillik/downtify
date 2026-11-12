@@ -192,6 +192,12 @@ export default {
     remove: 'Retirer la playlist des favoris',
   },
   normalization: {
+    level: 'Niveau sonore',
+    levelNormal: 'Normal',
+    levelLouder: 'Plus fort',
+    levelMaximum: 'Maximum',
+    levelHint:
+      'Le volume augmente dans les limites mesurées de chaque titre. Vos fichiers restent inchangés.',
     title: 'Normalisation du volume',
     hint: 'Lisez tous les morceaux à un volume semblable, sans modifier vos fichiers audio.',
     enable: 'Normaliser le volume de lecture',
@@ -513,6 +519,17 @@ export default {
     playCountYoutubeMusic: 'Écoutes sur YouTube Music (approximatif)',
   },
   queue: {
+    globalPause: 'Pause téléchargements et surveillances',
+    globalResume: 'Reprendre téléchargements et surveillances',
+    globalTitle: 'Activité du serveur',
+    globalHint:
+      'Les nouveaux téléchargements et contrôles attendent. Le travail actif se termine ; la file est conservée.',
+    globalPaused: 'Téléchargements et surveillances en pause.',
+    globalDraining: 'Fin du travail actif…',
+    globalRetry: 'Vérifier l’état',
+    globalFailed: 'Impossible de confirmer le changement.',
+    globalAdmin: 'Une session web administrateur est nécessaire.',
+    globalExpired: 'Session expirée. Reconnectez-vous.',
     title: 'File',
     tabActive: 'En cours',
     tabQueued: 'En attente',
@@ -602,6 +619,8 @@ export default {
       artistDesc: 'Artiste (Z–A)',
       albumAsc: 'Album (A–Z)',
       albumDesc: 'Album (Z–A)',
+      releaseNewest: 'Sorties les plus récentes d’abord',
+      releaseOldest: 'Sorties les plus anciennes d’abord',
       longest: 'Les plus longs d’abord',
       shortest: 'Les plus courts d’abord',
     },
@@ -957,6 +976,23 @@ export default {
   },
   playlists: {
     kicker: 'Playlist',
+    diagnostics: {
+      title: 'Diagnostic de la playlist',
+      check: 'Vérifier',
+      refresh: 'Actualiser',
+      unavailable: 'Le diagnostic est indisponible pour cette playlist.',
+      items: {
+        spotify_tracks: 'Titres Spotify',
+        downloaded: 'Téléchargés par Downtify',
+        physical_files: 'Fichiers trouvés',
+        track_index: 'Correspondances TrackIndex',
+        monitor_history: 'Historique du Monitor',
+        navidrome_matched: 'Trouvés dans Navidrome',
+        navidrome_rows: 'Titres dans la playlist Navidrome',
+        missing_files: 'Fichiers manquants',
+        orphan_files: 'Fichiers orphelins',
+      },
+    },
     notFound: 'Playlist introuvable',
     progress: '{have} sur {total} téléchargés',
     missingShort: { one: '{count} manquant', other: '{count} manquants' },
@@ -996,6 +1032,26 @@ export default {
     },
     alreadyIn: 'Déjà dans « {name} »',
     removedTrack: 'Retiré de « {name} »',
+    reorder: 'Réorganiser',
+    reorderHint:
+      'Faites glisser les titres ou utilisez les flèches, puis enregistrez le nouvel ordre.',
+    reorderSave: 'Enregistrer l’ordre',
+    reordered: 'Ordre enregistré',
+    reorderStale:
+      'Quelqu’un a modifié cette playlist entre-temps. Elle a été rechargée : réorganisez-la à nouveau.',
+    moveUp: 'Monter',
+    moveDown: 'Descendre',
+    moveTop: 'Placer en premier',
+    moveBottom: 'Placer en dernier',
+    repeatTitle: 'Déjà dans cette playlist',
+    repeatBody: {
+      one: 'Ce titre est déjà dans « {name} ». L’ajouter à nouveau ?',
+      other:
+        '{count} de ces titres sont déjà dans « {name} ». Les ajouter à nouveau ?',
+    },
+    repeatConfirm: 'Ajouter quand même',
+    repeatCancel: 'Ne pas ajouter',
+    inPlaylist: 'Déjà ajouté',
     hideTrack: 'Masquer de la playlist',
     hiddenTrack: 'Masqué de « {name} »',
     hiddenTitle: {
@@ -1018,6 +1074,12 @@ export default {
     nothingYetHint:
       'Les titres apparaissent ici à mesure qu’ils sont téléchargés.',
     nothingYetManualHint: 'Ajoutez des titres depuis votre bibliothèque.',
+    uploadCover: 'Importer une pochette',
+    removeCover: 'Supprimer la pochette',
+    coverSaved: 'Pochette de la playlist enregistrée',
+    coverRemoved: 'Pochette de la playlist supprimée',
+    coverInvalid: 'Choisissez une image JPEG, PNG ou WebP.',
+    coverTooLarge: 'L’image doit faire 10 Mio ou moins.',
   },
   track: {
     title: 'Titre',
@@ -1025,6 +1087,7 @@ export default {
     album: 'Album',
     trackNumber: 'Piste',
     year: 'Année',
+    releaseDate: 'Date de sortie',
     length: 'Durée',
     format: 'Format',
     size: 'Taille',
@@ -1032,12 +1095,25 @@ export default {
     file: 'Fichier',
   },
   player: {
+    unlockLayout: 'Déverrouiller la disposition du lecteur',
+    lockLayout: 'Verrouiller la disposition du lecteur',
+    resetLayout: 'Réinitialiser la disposition du lecteur',
+    resizeTrackSection: 'Redimensionner la section des informations du titre',
+    resizeTransportSection:
+      'Redimensionner la section des commandes de lecture',
     nowPlaying: 'Lecture en cours',
     openNowPlaying: 'Ouvrir la lecture en cours',
     closeNowPlaying: 'Fermer la lecture en cours',
     queue: 'File',
     upNext: 'À suivre',
     lyrics: 'Paroles',
+    karaoke: 'Karaoké',
+    karaokeWindow: 'Ouvrir dans une nouvelle fenêtre',
+    karaokeWindowBlocked:
+      'Le navigateur a bloqué la nouvelle fenêtre. Autorisez les fenêtres pop-up pour Downtify et réessayez.',
+    karaokeWaiting:
+      'En attente d’un titre depuis la fenêtre principale de Downtify',
+    fullscreen: 'Plein écran',
     details: 'Détails',
     playing: 'En lecture',
     play: 'Lire',
@@ -1460,6 +1536,21 @@ export default {
     deemixLocal: 'Même dossier dans Downtify (lecture seule acceptée)',
     deemixQuality: 'Qualité audio',
     slskdTitle: 'slskd',
+    slskdFormats: 'Priorité des formats',
+    slskdFormatsHint:
+      'Extensions séparées par des virgules, de la plus prioritaire à la moins prioritaire (ex. flac, mp3).',
+    slskdMinBitrate: 'Débit minimum des formats avec perte',
+    slskdMinBitrateHint:
+      'En mode strict, les fichiers avec perte sous cette valeur ou sans débit indiqué sont refusés. FLAC est exempté.',
+    slskdAttempts: 'Tentatives de candidats',
+    slskdAttemptsHint:
+      'En mode strict, ce nombre de candidats est essayé par format ; sinon, il s’applique au total.',
+    slskdStrictPriority: 'Priorité stricte des formats',
+    slskdStrictPriorityHint:
+      'Essaie chaque format dans l’ordre et classe les correspondances dans chaque format.',
+    slskdWhitelist: 'Autoriser uniquement les formats listés',
+    slskdWhitelistHint:
+      'Refuse les résultats dont l’extension ne figure pas dans la liste.',
     slskdHint:
       'Téléchargez depuis Soulseek via votre serveur slskd. Les titres introuvables passent à la source suivante.',
     slskdEnabled: 'Utiliser slskd',
@@ -1472,7 +1563,7 @@ export default {
     slskdQueuedTimeout: 'Délai en file',
     slskdInPlace: 'Laisser les fichiers dans le dossier slskd',
     slskdInPlaceHint:
-      'Les taguer là où slskd les a enregistrés au lieu de les copier dans votre dossier de téléchargements.',
+      'Activé : tague les fichiers sur place et conserve-les. Désactivé : copie et tague dans Téléchargements ; la source est supprimée uniquement après un import réussi. En cas d’échec, la source est conservée.',
     youtubeTitle: 'YouTube',
     cookies: 'Cookies YouTube',
     cookiesHint:
@@ -1491,9 +1582,14 @@ export default {
     format: 'Format',
     formatHint:
       'Les fichiers téléchargés depuis YouTube sont convertis dans ce format.',
+    formatOriginal: 'Original',
+    formatOriginalHint:
+      'Conserver le meilleur flux audio disponible sans le réencoder. L’extension du fichier dépend de la source.',
     bitrate: 'Qualité',
     bitrateHint: 'Débit pour les formats avec perte.',
     bitrateLossless: 'Non utilisé pour le FLAC, qui est sans perte.',
+    bitrateOriginal:
+      'Non utilisé lorsque le format audio original est conservé.',
     filesGroup: 'Fichiers',
     template: 'Nom de fichier',
     templateHint: 'Utilisez / pour créer des dossiers.',
@@ -1734,9 +1830,14 @@ export default {
     signInTitle: 'Se connecter à Downtify',
     signInBody:
       'Connectez-vous avec votre nom d’utilisateur et votre mot de passe.',
+    signInBodyOidcOnly: 'Connectez-vous avec votre fournisseur d’identité.',
     username: 'Nom d’utilisateur',
     password: 'Mot de passe',
     signIn: 'Se connecter',
+    oidcSignIn: 'Continuer avec le fournisseur d’identité',
+    or: 'ou',
+    oidcFailed:
+      'Connexion au fournisseur d’identité impossible. Veuillez réessayer.',
     wrongPassword: 'Nom d’utilisateur ou mot de passe incorrect',
     tooMany: 'Trop de tentatives. Patientez quelques minutes et réessayez.',
     forgotHint:
@@ -1798,6 +1899,12 @@ export default {
     androidUnreleased:
       'Aucune version n’a encore été publiée : l’appli est toujours en développement, il n’y a donc rien à installer pour l’instant.',
     androidRepo: 'Voir le dépôt',
+    iosGroup: 'Downtify pour iOS',
+    iosHint:
+      'Une application iPhone et iPad pour parcourir et écouter votre bibliothèque depuis ce serveur.',
+    iosBody:
+      'Connectez-vous avec votre compte ou associez l’application avec un code de cette page. Parcourez et écoutez votre bibliothèque, gardez des titres hors ligne et contrôlez la lecture depuis l’écran verrouillé.',
+    iosRepo: 'Voir le dépôt',
   },
   replace: {
     menu: 'Remplacer l’audio…',
