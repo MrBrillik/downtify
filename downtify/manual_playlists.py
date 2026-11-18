@@ -38,9 +38,9 @@ _WRITE_LOCK = threading.RLock()
 
 
 def _serialized(func: Callable[_P, _R]) -> Callable[_P, _R]:
-    """Run *func* alone among this module's M3U rewrites: the owner and
-    the editors of a shared playlist read, change and write it back at
-    the same time, and the last write would drop the other's songs."""
+    """Serialize this module's M3U rewrites, including maintenance:
+    reading, changing and writing a playlist concurrently would let
+    a stale edit or cleanup overwrite another operation's changes."""
 
     @functools.wraps(func)
     def run(*args: _P.args, **kwargs: _P.kwargs) -> _R:
@@ -392,6 +392,7 @@ def reorder_manual_playlist(
     }
 
 
+@_serialized
 def detach_imported_playlist(ctx: LibraryContext, name: str) -> dict[str, Any]:
     """Turn an imported playlist into a Library one (tracks kept).
 
@@ -542,6 +543,35 @@ def drop_manual_playlist(ctx: LibraryContext, name: str) -> dict[str, Any]:
         'playlists_affected': [],
         'manual': True,
     }
+
+
+@_serialized
+@_serialized
+def drop_copies_of(
+    ctx: LibraryContext, keep: str, extras: list[str]
+) -> list[str]:
+    """Drop *extras* from every manual M3U that already lists *keep* -
+    two copies of one song being merged into *keep*, where the playlist
+    would otherwise list it twice. Returns the playlists changed."""
+
+    keep = str(keep or '').strip().replace('\\', '/')
+    gone = {
+        str(item or '').strip().replace('\\', '/')
+        for item in extras
+        if str(item or '').strip()
+    }
+    if not keep or not gone:
+        return []
+    affected: list[str] = []
+    for path in m3u.iter_m3u_files(ctx.download_dir):
+        if not m3u.is_manual_m3u(path):
+            continue
+        files = _read_files(ctx, path)
+        if keep not in files or not gone.intersection(files):
+            continue
+        _write(ctx, [item for item in files if item not in gone], path)
+        affected.append(path.stem)
+    return affected
 
 
 @_serialized

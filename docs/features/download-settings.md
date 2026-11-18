@@ -124,6 +124,8 @@ The two sources apply the setting differently, since only one of them can actual
 Downtify already embeds the **largest** cover Spotify's public embed API offers for Spotify-resolved tracks/albums/playlists — there's no larger size to request. This setting only raises the ceiling for tracks resolved through YouTube Music (free-text search, YouTube URLs, and any Spotify track re-matched to YouTube Music for the actual audio) or Deezer (a pasted Deezer link, or a track from [Charts](charts.md)).
 :::
 
+**Minimum cover size** (off by default) works the other way round: it is a floor, not a fixed size. When the cover a track's source offers is smaller than it — Spotify's largest is usually 640 px — Downtify asks Spotify, iTunes and YouTube Music for the same release's artwork, as **Upgrade library** does, and embeds the largest. If none reaches the minimum, the largest one found is still embedded rather than none, and the log says so.
+
 Changing this value in Settings takes effect immediately, including for the currently-open search page — it does not require re-downloading anything already on disk.
 
 ## Overwrite existing files
@@ -208,3 +210,6 @@ Downtify embeds the following tags in every downloaded file, regardless of forma
 | Year | Spotify embed (track-level fetch) |
 | Album art | Spotify embed (track-level cover) for Spotify-resolved tracks; YouTube Music thumbnail or Deezer cover otherwise. Optional — see [Download cover art](#download-cover-art) and [Cover art resolution](#cover-art-resolution) |
 | Lyrics | lrclib (if enabled) |
+| ISRC | Deezer, only when it is certain. Optional — **Write ISRC codes** (see below) |
+
+The **ISRC** is the code a record label gives one recording, such as `USCM51600061`. With **Settings → Tags & lyrics → Write ISRC codes** on (the default), each new download is looked up on Deezer: a Deezer download takes its own track’s code; any other is searched by artist, title and length, and the code is written only when every match agrees. A song Deezer can’t pin down gets no code rather than a wrong one. Artist Watch and the duplicate check match songs by this code first, so the same recording is recognised even when two catalogues name it differently. Files already in your library are not changed, and Navidrome doesn’t identify songs by the ISRC, so writing it changes nothing there.

@@ -789,8 +789,19 @@ def parse_deezer_url(url: str) -> Optional[tuple[str, str]]:
     return match.group(1).lower(), match.group(2)
 
 
+class DeezerRefused(ValueError):
+    """A 200 reply carrying an ``error`` object, with Deezer's error code
+    (4 quota, 700 busy, 800 no data; 0 when it sent none)."""
+
+    def __init__(self, message: str, code: int = 0) -> None:
+        super().__init__(message)
+        self.code = code
+
+
 def _get_json(url: str, **params: Any) -> dict[str, Any]:
     """A Deezer REST GET, or raise :class:`ValueError`.
+
+    A refusal raises :class:`DeezerRefused` (a ``ValueError``).
 
     Same "HTTP 200 but an ``error`` object instead of data" trap as
     :func:`_search_rows` - an invalid id, a rate limit, all read this
@@ -808,7 +819,12 @@ def _get_json(url: str, **params: Any) -> dict[str, Any]:
         raise ValueError('Deezer sent an unexpected answer')
     if data.get('error'):
         logger.debug('Deezer refused {}: {}', url, data['error'])
-        raise ValueError('Deezer refused the request')
+        error = data['error']
+        code = error.get('code') if isinstance(error, dict) else 0
+        raise DeezerRefused(
+            'Deezer refused the request',
+            code if isinstance(code, int) else 0,
+        )
     return data
 
 
@@ -1026,6 +1042,37 @@ def album_from_id(album_id: str) -> list[dict[str, Any]]:
     """
 
     return _album_songs(_get_json(f'https://api.deezer.com/album/{album_id}'))
+
+
+def album_credits_from_id(
+    album_id: str,
+) -> tuple[str, list[str], list[dict[str, Any]]]:
+    """``(album_artist, main_artists, songs)`` for a Deezer album - its
+    tracks as :func:`album_from_id` lists them, plus whom the release is
+    credited to, in the same single request: the album artist and every
+    contributor Deezer gives the ``Main`` role (a joint album's second
+    artist; also, often, the guest of a "feat." single).
+
+    Raises :class:`ValueError` when the id doesn't resolve or the
+    request fails.
+    """
+
+    payload = _get_json(f'https://api.deezer.com/album/{album_id}')
+    artist = (
+        payload.get('artist')
+        if isinstance(payload.get('artist'), dict)
+        else {}
+    )
+    main = [
+        str(row.get('name') or '').strip()
+        for row in payload.get('contributors') or []
+        if isinstance(row, dict) and row.get('role') == 'Main'
+    ]
+    return (
+        str(artist.get('name') or '').strip(),
+        [name for name in main if name],
+        _album_songs(payload),
+    )
 
 
 def _album_songs(payload: dict[str, Any]) -> list[dict[str, Any]]:

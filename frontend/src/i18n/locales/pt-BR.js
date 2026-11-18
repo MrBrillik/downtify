@@ -1156,6 +1156,28 @@ export default {
       'Não foi possível iniciar o equalizador. A reprodução continua sem ele.',
   },
   monitor: {
+    select: 'Selecionar',
+    selectDone: 'Concluir',
+    selectAllShown: 'Selecionar todos os exibidos',
+    selectWatch: 'Selecionar {name}',
+    selectedCount: {
+      one: '{count} selecionado',
+      other: '{count} selecionados',
+    },
+    selectRangeHint: 'Shift+clique seleciona um intervalo',
+    bulkInterval: 'Mudar verificações para…',
+    bulkUpdated: {
+      one: '{count} monitoramento atualizado',
+      other: '{count} monitoramentos atualizados',
+    },
+    bulkChecking: {
+      one: 'Verificando {count} monitoramento…',
+      other: 'Verificando {count} monitoramentos…',
+    },
+    bulkStopped: {
+      one: '{count} monitoramento parado',
+      other: '{count} monitoramentos parados',
+    },
     tableColumns: 'Colunas',
     resetTableColumns: 'Redefinir colunas',
     releaseTypes: 'Baixar',
@@ -1180,6 +1202,47 @@ export default {
     filterAll: 'Todos',
     filterPlaylists: 'Playlists',
     filterArtists: 'Artistas',
+    filterWanted: 'Procurados',
+    wantedSummary: 'Faltando: {songs} em {releases}',
+    wantedSongs: { one: '{count} música', other: '{count} músicas' },
+    wantedReleases: { one: '{count} lançamento', other: '{count} lançamentos' },
+    wantedUnchecked: {
+      one: '{count} lançamento ainda não verificado',
+      other: '{count} lançamentos ainda não verificados',
+    },
+    wantedCheckAll: 'Verificar todos os artistas',
+    wantedDownloadAll: 'Baixar tudo o que falta',
+    wantedConfirmTitle: {
+      one: 'Baixar {count} música que falta?',
+      other: 'Baixar {count} músicas que faltam?',
+    },
+    wantedConfirmUnchecked: {
+      one: 'Mais o que faltar em {count} lançamento ainda não verificado. Verifique todos os artistas antes para saber o número exato.',
+      other:
+        'Mais o que faltar em {count} lançamentos ainda não verificados. Verifique todos os artistas antes para saber o número exato.',
+    },
+    wantedConfirmBody:
+      'As músicas que faltam são baixadas um artista por vez. Você pode acompanhá-las na Fila.',
+    wantedStop: 'Parar',
+    wantedChecking: 'Verificando {done} de {total}: {name}',
+    wantedDownloading: 'Baixando {done} de {total}: {name}',
+    wantedFinished: {
+      one: 'Concluído: {count} artista',
+      other: 'Concluído: {count} artistas',
+    },
+    wantedFailed: { one: '{count} com falha', other: '{count} com falha' },
+    wantedSkipped: { one: '{count} ignorado', other: '{count} ignorados' },
+    wantedStopped: 'Parado',
+    wantedStoppingDownload: 'Parando após {name}…',
+    wantedStoppingCheck: 'Parando…',
+    wantedBusy: 'Uma verificação ou um download de todos já está em andamento.',
+    wantedNotChecked: 'Ainda não verificados: {names}',
+    wantedMore: { one: 'e mais {count}', other: 'e mais {count}' },
+    wantedUncheckedBadge: 'Ainda não verificado',
+    wantedEmpty:
+      'Nada falta: todos os artistas que você acompanha estão completos.',
+    wantedSearch: 'Buscar artistas ou lançamentos',
+    wantedAllTypes: 'Todos os tipos',
     filterPaused: 'Pausados',
     sortAdded: 'Data de adição',
     sortName: 'Nome',
@@ -1257,6 +1320,84 @@ export default {
     save: 'Salvar',
     saved: 'Monitoramento atualizado',
     retargeted: 'Agora monitorando {name}',
+  },
+  artistReleases: {
+    title: 'Lançamentos',
+    hint: 'Tudo o que YouTube Music, Deezer e MusicBrainz listam deste artista, na última verificação, e o que sua biblioteca tem de cada um. Ative um lançamento para baixá-lo mesmo que o tipo não seja acompanhado, ou desative para parar de baixá-lo (o que já está fica).',
+    empty: 'Nenhum lançamento ainda',
+    emptyHint: 'Eles aparecem depois da próxima verificação.',
+    summary:
+      '{complete} completos · {partly} em parte · {missing} ainda sem nada',
+    kinds: 'Do MusicBrainz, baixar também',
+    kindsHint:
+      'Tipos de lançamento que só o MusicBrainz distingue. Mixtapes e trilhas sonoras são música do próprio artista; álbuns ao vivo, coletâneas e remixes costumam repeti-la. Só para este artista.',
+    byYou: 'escolhido por você',
+    switch: 'Baixar {name}',
+    switchedOn: '{name} ativado',
+    switchedOff: '{name} desativado',
+    noneHere: 'Nada aqui.',
+    check: 'Verificar o que eu tenho',
+    checking: 'Lendo listas de faixas: {done} de {total}…',
+    checkDone: 'Pronto: {count} listas lidas, {failed} com erro',
+    checkHint:
+      'Lê a lista de faixas de cada lançamento e compara com toda a sua biblioteca, então os álbuns que você já tinha antes do acompanhamento também contam. Nada é baixado. Lento para artistas grandes: o MusicBrainz permite uma requisição por segundo.',
+    tracks: 'Faixas de {name}',
+    tracksNotRead:
+      'Lista de faixas ainda não lida: toque em Verificar o que eu tenho.',
+    trackHave: 'Na sua biblioteca',
+    trackMissing: 'Faltando',
+    downloadMissing: 'Baixar o que falta',
+    downloadMissingCount: 'Baixar {count} que faltam',
+    missingTitle: 'Baixar o que falta?',
+    missingBody: {
+      one: 'Músicas faltando: {tracks}, de 1 lançamento que o acompanhamento baixa. As músicas que já estão na sua biblioteca são vinculadas, não baixadas de novo.',
+      other:
+        'Músicas faltando: {tracks}, de {count} lançamentos que o acompanhamento baixa. As músicas que já estão na sua biblioteca são vinculadas, não baixadas de novo.',
+    },
+    missingBodyUnread: {
+      one: 'Músicas faltando: {tracks}, de 1 lançamento que o acompanhamento baixa, mais as de lançamentos cuja lista ainda não foi lida ({unread}). As músicas que já estão na sua biblioteca são vinculadas, não baixadas de novo.',
+      other:
+        'Músicas faltando: {tracks}, de {count} lançamentos que o acompanhamento baixa, mais as de lançamentos cuja lista ainda não foi lida ({unread}). As músicas que já estão na sua biblioteca são vinculadas, não baixadas de novo.',
+    },
+    missingConfirm: 'Baixar',
+    missingStarted: 'Baixando o que falta: acompanhe na fila',
+    busy: 'Este artista está sendo verificado: acompanhe na fila.',
+    missingHint:
+      'Baixar o que falta percorre cada lançamento ativado e baixa as músicas que você não tem; ative um lançamento antes para incluí-lo.',
+    kind: {
+      mixtape: 'Mixtapes',
+      soundtrack: 'Trilhas sonoras',
+      live: 'Álbuns ao vivo',
+      compilation: 'Coletâneas',
+      remix: 'Remixes',
+      'dj-mix': 'Mixes de DJ',
+      demo: 'Demos',
+    },
+    section: {
+      album: 'Álbuns',
+      mixtape: 'Mixtapes',
+      ep: 'EPs',
+      single: 'Singles',
+      other: 'Ao vivo, coletâneas e remixes',
+    },
+    filter: {
+      all: 'Todos',
+      missing: 'Para baixar',
+      partly: 'Em parte',
+      complete: 'Completos',
+      not_watched: 'Não acompanhados',
+      off: 'Desativados',
+      not_own: 'Participações',
+    },
+    state: {
+      complete: 'Completo · {have}/{total}',
+      partly: 'Em parte · {have}/{total}',
+      missing: 'Para baixar',
+      skipped: 'Anterior ao acompanhamento',
+      not_watched: 'Não acompanhado',
+      off: 'Desativado',
+      not_own: 'Participação ou bootleg',
+    },
   },
   watchStats: {
     colActivity: 'Atividade',
@@ -1508,7 +1649,7 @@ export default {
       'Extensões separadas por vírgula, da maior para a menor prioridade (por exemplo, flac, mp3).',
     slskdMinBitrate: 'Bitrate mínimo para formatos com perdas',
     slskdMinBitrateHint:
-      'No modo estrito, arquivos com perdas abaixo deste valor ou sem bitrate informado são rejeitados. FLAC não é afetado.',
+      'Arquivos com perdas que informam um bitrate menor são ignorados. Arquivos sem bitrate informado continuam permitidos, a menos que a prioridade estrita de formato esteja ativa. No modo estrito, FLAC não é afetado.',
     slskdAttempts: 'Tentativas de candidatos',
     slskdAttemptsHint:
       'No modo estrito, tenta esse número de candidatos por formato; caso contrário, o total.',
@@ -1528,6 +1669,34 @@ export default {
     slskdFolderHint: 'O caminho dentro do contêiner do Downtify, não no host.',
     slskdTimeout: 'Tempo limite total',
     slskdQueuedTimeout: 'Tempo limite na fila',
+    slskdTimeoutHint:
+      'Quanto tempo um download pode levar antes de tentar o próximo candidato.',
+    slskdQueuedTimeoutHint:
+      'Quanto tempo esperar na fila de envio de outro usuário antes de desistir dele.',
+    slskdProfile: 'Perfil de qualidade',
+    slskdProfileHint:
+      'Um ponto de partida para a lista de formatos. Altere qualquer campo abaixo para personalizar.',
+    slskdProfileDefault: 'Padrão',
+    slskdProfileLossless: 'Lossless primeiro',
+    slskdProfileLossy: 'Só com perdas',
+    slskdAdvanced: 'Ajuste fino de qualidade e correspondência',
+    slskdAdvancedHint:
+      'Regras extras de bitrate, tentativas de candidatos e tempos limite. Desativado, as regras extras de bitrate não são usadas.',
+    slskdUnknownBitrate: 'Arquivos sem bitrate informado',
+    slskdUnknownBitrateHint:
+      'Alguns usuários do Soulseek não informam o bitrate. O padrão os rejeita só no modo estrito com bitrate mínimo.',
+    slskdUnknownAuto: 'Padrão',
+    slskdUnknownAllow: 'Permitir',
+    slskdUnknownReject: 'Rejeitar',
+    slskdPreferBitrate: 'Tentar o maior bitrate primeiro',
+    slskdPreferBitrateHint:
+      'Entre os arquivos que correspondem bem o suficiente, começar pela melhor qualidade em vez do nome de arquivo mais parecido.',
+    slskdFormatFloors: 'Bitrate mínimo por formato',
+    slskdFormatFloorsHint:
+      'Deixe em branco para usar o mínimo acima. Formatos eficientes como AAC (m4a) e Opus soam bem com bitrates menores que MP3.',
+    slskdMaxBitrate: 'Bitrate máximo',
+    slskdMaxBitrateHint:
+      '0 permite qualquer um. Por volta de 400 ignora áudio lossless dentro de arquivos .m4a (ALAC) e mantém os arquivos pequenos.',
     slskdInPlace: 'Manter arquivos na pasta do slskd',
     slskdInPlaceHint:
       'Ativado: marca os arquivos no local e os mantém. Desativado: copia e marca em Downloads; remove a origem somente após a importação bem-sucedida. Falhas mantêm a origem.',
@@ -1588,9 +1757,17 @@ export default {
     syncDelay: 'Pausa entre a sincronização',
     syncDelayHint:
       'Espera depois de cada lote de faixas importadas (tamanho = Downloads simultâneos) antes de buscar letra, capa e gênero. Evita limite de taxa em pastas grandes.',
+    idsGroup: 'IDs das músicas',
+    isrc: 'Gravar códigos ISRC',
+    isrcHint:
+      'Salva o ISRC de cada novo download, o código que identifica uma gravação, para reconhecer a mesma música mesmo com outro nome. Buscado no Deezer; omitido quando não há certeza.',
     artGroup: 'Capa',
     coverArt: 'Incorporar capa',
     coverArtHint: 'Desative para arquivos menores e downloads mais rápidos.',
+    coverMin: 'Tamanho mínimo da capa',
+    coverMinHint:
+      'Abaixo disto, Spotify, iTunes e YouTube Music são consultados por uma capa maior do mesmo lançamento, e a maior é usada. Desativado mantém a capa da fonte da faixa.',
+    coverMinOff: 'Desativado',
     coverSize: 'Tamanho da capa',
     coverSizeHint:
       'Para capas do YouTube Music e Deezer. Capas do Spotify sempre usam o maior tamanho disponível.',
@@ -1617,6 +1794,48 @@ export default {
     lyricsLrclibHint: 'Banco comunitário — letras simples e sincronizadas',
     lyricsNetease: 'NetEase Cloud Music',
     lyricsNeteaseHint: 'Catálogo grande, normalmente sincronizado',
+    ratingsGroup: 'Avaliações do Deezer',
+    ratingsHint:
+      'Dá às suas músicas no Navidrome de 0 a 5 estrelas conforme a popularidade no Deezer, como o dztnr. As estrelas pertencem à conta do Navidrome acima.',
+    ratingsRepeat: 'Repetir',
+    ratingsRepeatOff: 'Desligado',
+    ratingsRepeatDaily: 'Todo dia',
+    ratingsRepeatWeekly: 'Toda semana',
+    ratingsRepeatMonthly: 'Todo mês',
+    ratingsSkipRated: 'Pular músicas que já têm estrelas',
+    ratingsSkipRatedHint:
+      'As estrelas que você mesmo colocou continuam. As próximas execuções pulam todas as músicas que já têm estrelas.',
+    ratingsSkipStarred: 'Pular favoritas',
+    ratingsGrading: 'Classificação',
+    ratingsGradingAbsolute: 'Popularidade mundial',
+    ratingsGradingArtist: 'Em relação à música mais popular do artista',
+    ratingsGradingAlbum: 'Em relação à música mais popular do álbum',
+    ratingsGradingHint:
+      'Comparar com a música mais popular do artista dá 5 estrelas também aos sucessos de artistas menos conhecidos.',
+    ratingsRun: 'Executar agora',
+    ratingsPreview: 'Prévia',
+    ratingsStop: 'Parar',
+    ratingsReading: 'Lendo sua biblioteca do Navidrome…',
+    ratingsProgress: '{done} de {total} músicas',
+    ratingsLast:
+      'Última execução {when}: {rated} avaliadas, {skipped} puladas, {notFound} não encontradas no Deezer',
+    ratingsLastPreview:
+      'Prévia {when}: {rated} seriam avaliadas, {skipped} puladas, {notFound} não encontradas no Deezer',
+    ratingsStopped: 'Interrompida',
+    ratingsNext: 'Próxima execução {when}',
+    ratingsNextSoon: 'Próxima execução dentro de uma hora',
+    ratingsNever: 'Ainda não executada',
+    ratingsFailedDeezer:
+      'Não foi possível acessar o Deezer. As estrelas já dadas continuam.',
+    ratingsFailedNavidrome: 'Erro do Navidrome: {message}',
+    ratingsFailed: 'A avaliação falhou: {message}',
+    ratingsNotConfigured: 'Salve primeiro o login do Navidrome.',
+    ratingsBusy: 'Já há uma avaliação em andamento.',
+    ratingsColSong: 'Música',
+    ratingsColRank: 'Popularidade no Deezer',
+    ratingsColStars: 'Estrelas',
+    ratingsUnmatched: 'Não encontradas no Deezer ({count})',
+    ratingsFirstRows: 'Mostrando as primeiras {count} músicas.',
     navidromeTitle: 'Navidrome',
     navidromeHint:
       'Espelha as playlists baixadas no Navidrome. A pasta de músicas dele precisa incluir os downloads do Downtify.',
@@ -1674,6 +1893,10 @@ export default {
     navidromeSync: 'Criar playlists no Navidrome',
     navidromeSyncHint:
       'Após downloads de playlists e verificações do monitor, mantém uma playlist com o mesmo nome no Navidrome.',
+    doctor: 'Doutor',
+    navidromeM3uImport: 'Deixar o Navidrome importar as playlists M3U',
+    navidromeM3uImportHint:
+      'O Navidrome transforma cada M3U que o Downtify grava em uma playlist com capa. Com isto ativado, o Downtify não cria uma segunda pela API.',
     navidromePublic: 'Tornar públicas as playlists do Navidrome',
     primaryLibrary: 'Primary library folder',
     primaryLibraryHint:
@@ -1879,6 +2102,17 @@ export default {
     running: 'Substituindo o áudio…',
     done: 'Áudio substituído',
     failed: 'Não foi possível substituir o áudio',
+    handReplaced:
+      'Você substituiu este áudio manualmente em {date}. Os downloads deixam este arquivo como está.',
+    unprotect: 'Deixar os downloads substituírem',
+    unprotected: 'Os downloads podem substituir este arquivo de novo',
+    uploading: 'Enviando o arquivo…',
+    fileTitle: 'Ou use um arquivo do seu dispositivo',
+    fileHint:
+      'Um arquivo {format} é usado como está. Outros arquivos de áudio (MP3, FLAC, M4A, WAV…) são convertidos para {format}.',
+    fileChoose: 'Escolher um arquivo…',
+    fileOther: 'Escolher outro arquivo…',
+    fileConverted: 'Convertido para {format}',
     source: {
       'youtube-music': 'YouTube Music',
       youtube: 'YouTube',
@@ -2159,6 +2393,10 @@ export default {
     playbackSpeed: 'Velocidade de reprodução',
   },
   confirm: {
+    stopWatchingManyTitle: {
+      one: 'Parar de monitorar {count} item?',
+      other: 'Parar de monitorar {count} itens?',
+    },
     deleteTrackTitle: 'Excluir “{title}”?',
     deleteTracksTitle: 'Excluir {count} faixas?',
     deleteTracksBody:
@@ -2226,5 +2464,196 @@ export default {
   },
   source: {
     from: 'Baixado de {source}',
+  },
+  doctor: {
+    title: 'Doutor',
+    intro:
+      'Versões novas do Downtify corrigem problemas daqui para frente, mas arquivos e playlists gravados por versões antigas continuam como estavam. O Doutor encontra esses restos e repara o que consegue provar que é seguro.',
+    checkup: 'Verificação',
+    checkupHint:
+      'Analisa sobras do slskd, músicas e playlists duplicadas e o que o Navidrome mostra. Não altera nada.',
+    lastCheckup: 'Última verificação: {when}',
+    runCheckup: 'Verificar agora',
+    stop: 'Parar',
+    step: {
+      starting: 'Iniciando…',
+      library: 'Lendo a biblioteca…',
+      playlists: 'Lendo as playlists…',
+      duplicates: 'Procurando músicas duplicadas…',
+      monitor: 'Verificando playlists monitoradas…',
+      navidrome: 'Consultando o Navidrome…',
+      pausing: 'Aguardando os downloads em andamento…',
+      listing: 'Listando a pasta do slskd…',
+      verifying: 'Comparando o áudio com a biblioteca…',
+      deleting: 'Removendo…',
+      navidrome_scan: 'Aguardando o Navidrome reescanear…',
+      dedupe_check: 'Verificando as cópias…',
+      dedupe_relink: 'Movendo playlists, curtidas e monitoramentos…',
+      dedupe_remove: 'Removendo as outras cópias…',
+      merging: 'Juntando playlists…',
+    },
+    slskdTitle: 'Sobras do slskd',
+    slskdHint:
+      'Versões antigas deixavam cada arquivo do Soulseek na pasta do slskd depois de copiá-lo para a biblioteca. Só é oferecido para exclusão um arquivo cujo áudio seja idêntico a uma música da biblioteca.',
+    slskdLeftovers: 'Arquivos na pasta do slskd',
+    slskdNotChecked: 'Faça a verificação para contá-los.',
+    slskdInPlace:
+      'Os arquivos ficam na pasta do slskd, então ela faz parte da biblioteca. Nada a limpar.',
+    slskdFound: 'Fora da biblioteca: {files} · {size}',
+    slskdCheck: 'Pausar downloads e verificar',
+    slskdCheckTitle: 'Verificar sobras do slskd?',
+    slskdCheckBody:
+      'Os downloads são pausados e os em andamento terminam antes, para que nada seja gravado durante a comparação. Nada é excluído sem sua confirmação.',
+    queueHeld:
+      'Os downloads estão pausados enquanto você decide. Eles voltam sozinhos depois de uma hora.',
+    slskdKeepResume: 'Manter e retomar downloads',
+    status: {
+      verified: 'Idêntico na biblioteca',
+      different: 'Parecido, não idêntico',
+      unmatched: 'Não está na biblioteca',
+      unreadable: 'Ilegível',
+      recent: 'Alterado há pouco',
+      missing: 'Sumiu',
+    },
+    slskdVerifiedHint:
+      'Cada um tem áudio idêntico, bit a bit, ao arquivo da biblioteca indicado abaixo.',
+    showMore: 'Mostrar mais',
+    slskdDelete: 'Excluir cópias idênticas ({files} · {size})',
+    slskdDeleteTitle: 'Excluir as cópias idênticas?',
+    slskdDeleteBody:
+      'Arquivos a remover da pasta do slskd: {files} ({size}). Cada um é conferido de novo antes: sem alterações e com a cópia ainda na biblioteca. Os downloads voltam em seguida.',
+    slskdDeleteConfirm: 'Excluir',
+    slskdCleaned: 'Removidos: {files} · liberados: {size}',
+    slskdKeptChanged:
+      'Mantidos porque mudaram ou a cópia da biblioteca sumiu: {files}',
+    checkGone: 'Os arquivos saíram do disco',
+    checkQueueResumed: 'Downloads retomados',
+    checkNavidromeScan: 'O Navidrome reescaneou',
+    playlistsTitle: 'Playlists duplicadas',
+    playlistsHint:
+      'Dois arquivos M3U para uma playlist, por exemplo um deixado onde uma versão antiga gravava. Juntar mantém cada música uma vez, a capa e um só arquivo. Os originais são copiados antes.',
+    playlistsOk: 'Cada playlist tem um único M3U.',
+    groupReason: {
+      name: 'Mesmo nome',
+      songs: 'Mesmas músicas',
+      manual: 'Sua escolha',
+    },
+    songsCount: 'Músicas: {count}',
+    hasCover: 'Tem capa',
+    keeps: 'Mantido',
+    mergePlan:
+      'Resultado: {songs} músicas. Elas têm {overlap}% das músicas em comum.',
+    mergeUnsafe:
+      'Só {overlap}% das músicas coincidem; podem ser playlists diferentes. Não serão juntadas.',
+    merge: 'Juntar',
+    mergeTitle: 'Juntar estas playlists?',
+    mergeBody:
+      '{keeper} ficará com as {songs} músicas e a capa; os outros arquivos são removidos após um backup.',
+    merged: '{path} agora tem {songs} músicas.',
+    checkOthersGone: 'Os outros M3U foram removidos',
+    checkCover: 'A capa está ao lado',
+    checkNavidromeOne:
+      'O Navidrome lista esta playlist uma vez (encontradas: {count})',
+    backupAt: 'Backup: {path}',
+    manualTitle: 'Escolher playlists',
+    manualHint:
+      'Escolha dois ou mais M3U que deveriam ser uma playlist só. Só são juntados se a maioria das músicas coincidir.',
+    manualFilter: 'Filtrar playlists',
+    manualCompare: 'Comparar',
+    navidromeHint:
+      'O que o Navidrome, e todo app ligado a ele, realmente mostra.',
+    navidromeOff: 'O Navidrome não está configurado.',
+    navidromeDown: 'O Navidrome não respondeu.',
+    navidromeNoAdmin:
+      'Adicione um login de administrador em Configurações → Navidrome para que o Doutor veja as playlists importadas e seus arquivos.',
+    navidromeSummary: 'Playlists',
+    navidromeCounts:
+      'Duplicadas: {duplicates} · M3U sumiu: {orphans} · Faltam músicas: {incomplete}',
+    navidromeFix: 'Corrigir',
+    navidromeFixTitle: 'Corrigir playlists do Navidrome?',
+    navidromeFixBody:
+      'As playlists marcadas como “será removida” são excluídas ({count}) e o Navidrome reescaneia.',
+    navidromeFixImport:
+      'O Downtify também deixa de criar a própria cópia das playlists que o Navidrome importa.',
+    navidromeSuggestImport:
+      'O Navidrome importa os M3U do Downtify (com capas) e o Downtify também cria as mesmas playlists pela API, então cada uma aparece duas vezes.',
+    reason: {
+      m3u_and_api: 'M3U importado e cópia do Downtify',
+      imports: 'Importada duas vezes',
+      api: 'Criada duas vezes',
+      name: 'Mesmo nome',
+      orphan: 'O M3U sumiu',
+    },
+    kind: {
+      import: 'Importada de M3U',
+      downtify: 'Criada pelo Downtify',
+      other: 'Outra',
+    },
+    willRemove: 'será removida',
+    wouldLoseSongs: 'mantida: tem músicas que a importada não tem',
+    incomplete: 'O Navidrome mostra {songs} das {m3u} músicas do M3U.',
+    incompleteOutside:
+      'Músicas fora da pasta de músicas do Navidrome: {count}.',
+    navidromeSongDupes: 'Músicas duplicadas no Navidrome',
+    songDupesCounts:
+      'Músicas listadas mais de uma vez: {groups} · cópias extras: {extra} · numa pasta slskd: {slskd}',
+    ndRemoved: 'Playlists removidas: {count}',
+    ndRemaining: 'Restam: duplicadas {duplicates}, M3U sumiu {orphans}',
+    duplicatesTitle: 'Músicas duplicadas',
+    duplicatesHint:
+      'Arquivos da biblioteca com a mesma música. Ouça cada cópia e fique com a melhor: as playlists, curtidas e monitoramentos das outras passam para ela, então nada some nem é baixado de novo. Cópias que são mesmo versões diferentes podem ser todas mantidas.',
+    duplicatesExact: 'Mesmo arquivo',
+    duplicatesLikely: 'Provavelmente a mesma música',
+    duplicatesCounts: 'Músicas: {groups} · arquivos extras: {files} · {size}',
+    dupeKeep: 'Manter esta cópia',
+    dupeIn: 'Em {playlists}',
+    dupeInNone: 'Em nenhuma playlist',
+    dupeTags: 'Tags: {title} · {album}',
+    dupeMerge: 'Manter a cópia escolhida',
+    dupeKeepAll: 'Manter todas, são diferentes',
+    dupeMergeTitle: 'Manter só esta cópia?',
+    dupeMergeBody:
+      '{keep} fica. As outras cópias ({count}) são removidas {where}. Toda playlist, curtida e monitoramento que as usava agora usa a que você mantém, então nada é baixado de novo.',
+    dupeToTrash: 'para a lixeira de música, por 30 dias',
+    dupeForGood: 'de vez',
+    dupeMergeConfirm: 'Manter e remover as outras',
+    dupeMerged: '{keep} mantida · cópias removidas: {count}',
+    dupeMergedPlaylists: 'Playlists atualizadas: {playlists}',
+    dupeCheckClean: 'Nada mais aponta para as cópias removidas',
+    dupeLeftovers:
+      'Algo ainda aponta para uma cópia removida ({where}). Faça a verificação de novo.',
+    dupeFailed: 'Não removidas: {files}',
+    dupeKeptApart: 'Mantidas como músicas diferentes: {count}',
+    dupeListAgain: 'Mostrar de novo',
+    dupeKeptAllDone:
+      'Todas mantidas. Elas só voltam à lista se aparecer outra cópia.',
+    relinkedTitle: 'Baixada de novo com outro ID do Spotify',
+    relinkedHint:
+      'Às vezes o Spotify troca uma faixa da playlist pela mesma música com outro ID. Uma playlist monitorada então baixa de novo.',
+    relinkedLabel: 'Mesma música, vários IDs',
+    relinkedCounts: 'Músicas: {songs} · arquivos extras: {extra}',
+    error: {
+      doctor_busy: 'O Doutor já está trabalhando.',
+      doctor_failed: 'O Doutor parou com um erro. Veja o log do servidor.',
+      queue_busy:
+        'Os downloads em andamento não terminaram a tempo. Tente mais tarde.',
+      scan_first: 'Verifique as sobras de novo primeiro.',
+      m3u_not_found: 'Esse M3U sumiu. Faça a verificação de novo.',
+      m3u_manual: 'Playlists criadas na Biblioteca não são juntadas.',
+      need_two: 'Escolha pelo menos duas playlists.',
+      playlists_differ:
+        'Poucas músicas coincidem; parecem playlists diferentes.',
+      not_flagged: 'Faça a verificação de novo primeiro.',
+      dedupe_rescan: 'A lista está desatualizada. Faça a verificação de novo.',
+      dedupe_missing: 'Um dos arquivos sumiu. Faça a verificação de novo.',
+      dedupe_invalid: 'Escolha uma cópia para manter.',
+      dedupe_trash:
+        'A lixeira de música não pode receber uma das cópias (a pasta dela não está coberta, ou ela está tocando). Nada foi alterado.',
+      dedupe_replacement_pending:
+        'Substituir áudio ainda está trabalhando em um destes arquivos.',
+      doctor_not_ready:
+        'O Downtify ainda está iniciando. Tente de novo em instantes.',
+      navidrome_off: 'O Navidrome não está configurado.',
+    },
   },
 }

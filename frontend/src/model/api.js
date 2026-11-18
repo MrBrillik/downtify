@@ -754,6 +754,28 @@ function replaceAudio(file, videoId) {
   return API.post('/api/library/replace', { file, video_id: videoId })
 }
 
+// The audio file is sent as the raw request body (no multipart, like
+// uploadArtistArt); its name tells the server its format.
+function replaceAudioFromFile(file, upload, onProgress) {
+  return API.post('/api/library/replace/upload', upload, {
+    params: { file, name: upload.name },
+    headers: { 'Content-Type': 'application/octet-stream' },
+    timeout: 0,
+    onUploadProgress: (event) => {
+      if (onProgress && event.total) onProgress(event.loaded / event.total)
+    },
+  })
+}
+
+// Whether downloads leave a hand-replaced file alone, and lifting that.
+function getHandReplaced(file) {
+  return API.get('/api/library/replace/protected', { params: { file } })
+}
+
+function forgetHandReplaced(file) {
+  return API.delete('/api/library/replace/protected', { params: { file } })
+}
+
 // Mark (or unmark) an album's tracks as a Various Artists compilation:
 // rewrites their album-artist tag and compilation flag in place.
 function setAlbumCompilation(files, compilation) {
@@ -905,6 +927,77 @@ function getLibraryUsage(days = 30) {
 // Kept by the server for a few minutes unless `refresh`.
 function scanLibraryUsage(refresh = false) {
   return API.get('/api/library/usage/scan', { params: { refresh } })
+}
+
+// ── Navidrome ratings from Deezer (admins) ────────────────────────────
+function navidromeRatingsStatus() {
+  return API.get('/api/navidrome/ratings')
+}
+
+function navidromeRatingsRun(body) {
+  return API.post('/api/navidrome/ratings/run', body)
+}
+
+function navidromeRatingsCancel() {
+  return API.post('/api/navidrome/ratings/cancel')
+}
+
+// ── Doctor (admins): find and repair what older versions left ────────
+function doctorStatus() {
+  return API.get('/api/doctor')
+}
+
+function doctorScan() {
+  return API.post('/api/doctor/scan')
+}
+
+function doctorCancel() {
+  return API.post('/api/doctor/cancel')
+}
+
+// Pauses the download queue, then checks every slskd leftover.
+function doctorSlskdScan() {
+  return API.post('/api/doctor/slskd/scan')
+}
+
+function doctorSlskdFiles(params = {}) {
+  return API.get('/api/doctor/slskd/files', { params })
+}
+
+// Deletes the verified leftovers (all, or `files`) and resumes the queue.
+function doctorSlskdClean(files = []) {
+  return API.post('/api/doctor/slskd/clean', { files })
+}
+
+function doctorSlskdRelease() {
+  return API.post('/api/doctor/slskd/release')
+}
+
+function doctorPreview(paths) {
+  return API.post('/api/doctor/playlists/preview', { paths })
+}
+
+function doctorMerge(paths) {
+  return API.post('/api/doctor/playlists/merge', { paths })
+}
+
+// Keeps `keep` and moves every reference to the copies in `remove` onto
+// it before removing them (to the music trash when it is on).
+function doctorDuplicatesMerge(keep, remove) {
+  return API.post('/api/doctor/duplicates/merge', { keep, remove })
+}
+
+// "Keep all": the files are different songs; not listed again.
+function doctorDuplicatesKeep(files) {
+  return API.post('/api/doctor/duplicates/keep', { files })
+}
+
+function doctorDuplicatesKeepReset() {
+  return API.post('/api/doctor/duplicates/keep/reset')
+}
+
+function doctorNavidromeRepair(payload) {
+  return API.post('/api/doctor/navidrome/repair', payload)
 }
 
 function writePlaylistM3u(payload) {
@@ -1132,6 +1225,9 @@ export default {
   setServerPort,
   getReplaceCandidates,
   replaceAudio,
+  replaceAudioFromFile,
+  getHandReplaced,
+  forgetHandReplaced,
   setAlbumCompilation,
   getDiscover,
   getDiscoverDeezerCollections,
@@ -1162,6 +1258,22 @@ export default {
   resumeLibraryUpgrade,
   cancelLibraryUpgrade,
   getLibraryUsage,
+  navidromeRatingsStatus,
+  navidromeRatingsRun,
+  navidromeRatingsCancel,
+  doctorStatus,
+  doctorScan,
+  doctorCancel,
+  doctorSlskdScan,
+  doctorSlskdFiles,
+  doctorSlskdClean,
+  doctorSlskdRelease,
+  doctorPreview,
+  doctorMerge,
+  doctorDuplicatesMerge,
+  doctorDuplicatesKeep,
+  doctorDuplicatesKeepReset,
+  doctorNavidromeRepair,
   scanLibraryUsage,
   writePlaylistM3u,
   getQueue,

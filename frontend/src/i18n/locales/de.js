@@ -1183,6 +1183,25 @@ export default {
       'Der Equalizer konnte nicht gestartet werden. Die Wiedergabe wird ohne ihn fortgesetzt.',
   },
   monitor: {
+    select: 'Auswählen',
+    selectDone: 'Fertig',
+    selectAllShown: 'Alle angezeigten auswählen',
+    selectWatch: '{name} auswählen',
+    selectedCount: { one: '{count} ausgewählt', other: '{count} ausgewählt' },
+    selectRangeHint: 'Umschalt-Klick wählt einen Bereich',
+    bulkInterval: 'Prüfintervall ändern auf…',
+    bulkUpdated: {
+      one: '{count} Überwachung geändert',
+      other: '{count} Überwachungen geändert',
+    },
+    bulkChecking: {
+      one: '{count} Überwachung wird geprüft…',
+      other: '{count} Überwachungen werden geprüft…',
+    },
+    bulkStopped: {
+      one: '{count} Überwachung beendet',
+      other: '{count} Überwachungen beendet',
+    },
     tableColumns: 'Spalten',
     resetTableColumns: 'Spalten zurücksetzen',
     releaseTypes: 'Veröffentlichungen',
@@ -1209,6 +1228,56 @@ export default {
     filterAll: 'Alle',
     filterPlaylists: 'Playlists',
     filterArtists: 'Künstler',
+    filterWanted: 'Gesucht',
+    wantedSummary: 'Fehlend: {songs} in {releases}',
+    wantedSongs: { one: '{count} Song', other: '{count} Songs' },
+    wantedReleases: {
+      one: '{count} Veröffentlichung',
+      other: '{count} Veröffentlichungen',
+    },
+    wantedUnchecked: {
+      one: '{count} Veröffentlichung noch nicht geprüft',
+      other: '{count} Veröffentlichungen noch nicht geprüft',
+    },
+    wantedCheckAll: 'Alle Künstler prüfen',
+    wantedDownloadAll: 'Alle fehlenden herunterladen',
+    wantedConfirmTitle: {
+      one: '{count} fehlenden Song herunterladen?',
+      other: '{count} fehlende Songs herunterladen?',
+    },
+    wantedConfirmUnchecked: {
+      one: 'Dazu kommt, was in {count} noch nicht geprüften Veröffentlichung fehlt. Prüfe zuerst alle Künstler für eine genaue Anzahl.',
+      other:
+        'Dazu kommt, was in {count} noch nicht geprüften Veröffentlichungen fehlt. Prüfe zuerst alle Künstler für eine genaue Anzahl.',
+    },
+    wantedConfirmBody:
+      'Die fehlenden Songs werden Künstler für Künstler heruntergeladen. Du kannst sie in der Warteschlange verfolgen.',
+    wantedStop: 'Stopp',
+    wantedChecking: 'Prüfe {done} von {total}: {name}',
+    wantedDownloading: 'Lade herunter {done} von {total}: {name}',
+    wantedFinished: {
+      one: 'Fertig: {count} Künstler',
+      other: 'Fertig: {count} Künstler',
+    },
+    wantedFailed: {
+      one: '{count} fehlgeschlagen',
+      other: '{count} fehlgeschlagen',
+    },
+    wantedSkipped: {
+      one: '{count} übersprungen',
+      other: '{count} übersprungen',
+    },
+    wantedStopped: 'Gestoppt',
+    wantedStoppingDownload: 'Stoppe nach {name} …',
+    wantedStoppingCheck: 'Stoppe …',
+    wantedBusy: '„Alle prüfen“ oder „Alle herunterladen“ läuft bereits.',
+    wantedNotChecked: 'Noch nicht geprüft: {names}',
+    wantedMore: { one: 'und {count} weitere', other: 'und {count} weitere' },
+    wantedUncheckedBadge: 'Noch nicht geprüft',
+    wantedEmpty:
+      'Nichts fehlt: Alle Künstler, die du beobachtest, sind vollständig.',
+    wantedSearch: 'Künstler oder Veröffentlichungen suchen',
+    wantedAllTypes: 'Alle Typen',
     filterPaused: 'Pausiert',
     sortAdded: 'Hinzugefügt am',
     sortName: 'Name',
@@ -1288,6 +1357,85 @@ export default {
     save: 'Speichern',
     saved: 'Überwachung aktualisiert',
     retargeted: '{name} wird jetzt überwacht',
+  },
+  artistReleases: {
+    title: 'Veröffentlichungen',
+    hint: 'Alles, was YouTube Music, Deezer und MusicBrainz für diesen Künstler listen, Stand der letzten Prüfung, und was deine Bibliothek davon hat. Schalte eine Veröffentlichung ein, um sie auch dann herunterzuladen, wenn ihr Typ nicht beobachtet wird, oder aus, damit sie nicht mehr heruntergeladen wird (Vorhandenes bleibt).',
+    empty: 'Noch keine Veröffentlichungen',
+    emptyHint: 'Sie erscheinen nach der nächsten Prüfung.',
+    summary:
+      '{complete} vollständig · {partly} teilweise · {missing} noch leer',
+    kinds: 'Von MusicBrainz auch herunterladen',
+    kindsHint:
+      'Arten von Veröffentlichungen, die nur MusicBrainz unterscheidet. Mixtapes und Soundtracks sind eigene Musik des Künstlers; Live-Alben, Compilations und Remixe wiederholen sie meist. Nur für diesen Künstler.',
+    byYou: 'von dir gesetzt',
+    switch: '{name} herunterladen',
+    switchedOn: '{name} eingeschaltet',
+    switchedOff: '{name} ausgeschaltet',
+    noneHere: 'Hier ist nichts.',
+    check: 'Prüfen, was ich habe',
+    checking: 'Titellisten werden gelesen: {done} von {total}…',
+    checkDone: 'Fertig: {count} Titellisten gelesen, {failed} fehlgeschlagen',
+    checkHint:
+      'Liest die Titelliste jeder Veröffentlichung und vergleicht sie mit deiner ganzen Bibliothek, sodass auch Alben zählen, die du schon vor der Beobachtung hattest. Es wird nichts heruntergeladen. Bei großen Künstlern langsam: MusicBrainz erlaubt eine Anfrage pro Sekunde.',
+    tracks: 'Titel von {name}',
+    tracksNotRead:
+      'Titelliste noch nicht gelesen: drücke „Prüfen, was ich habe“.',
+    trackHave: 'In deiner Bibliothek',
+    trackMissing: 'Fehlt',
+    downloadMissing: 'Fehlendes herunterladen',
+    downloadMissingCount: '{count} fehlende herunterladen',
+    missingTitle: 'Fehlendes herunterladen?',
+    missingBody: {
+      one: 'Fehlende Songs: {tracks}, aus 1 Veröffentlichung, die die Beobachtung herunterlädt. Songs, die schon in deiner Bibliothek sind, werden verknüpft, nicht erneut heruntergeladen.',
+      other:
+        'Fehlende Songs: {tracks}, aus {count} Veröffentlichungen, die die Beobachtung herunterlädt. Songs, die schon in deiner Bibliothek sind, werden verknüpft, nicht erneut heruntergeladen.',
+    },
+    missingBodyUnread: {
+      one: 'Fehlende Songs: {tracks}, aus 1 Veröffentlichung, die die Beobachtung herunterlädt, dazu alle aus Veröffentlichungen, deren Titelliste noch nicht gelesen wurde ({unread}). Songs, die schon in deiner Bibliothek sind, werden verknüpft, nicht erneut heruntergeladen.',
+      other:
+        'Fehlende Songs: {tracks}, aus {count} Veröffentlichungen, die die Beobachtung herunterlädt, dazu alle aus Veröffentlichungen, deren Titelliste noch nicht gelesen wurde ({unread}). Songs, die schon in deiner Bibliothek sind, werden verknüpft, nicht erneut heruntergeladen.',
+    },
+    missingConfirm: 'Herunterladen',
+    missingStarted:
+      'Fehlendes wird heruntergeladen: verfolge es in der Warteschlange',
+    busy: 'Dieser Künstler wird gerade geprüft: verfolge es in der Warteschlange.',
+    missingHint:
+      'Fehlendes herunterladen geht jede eingeschaltete Veröffentlichung durch und lädt die Songs, die du nicht hast; schalte eine Veröffentlichung zuerst ein, um sie einzubeziehen.',
+    kind: {
+      mixtape: 'Mixtapes',
+      soundtrack: 'Soundtracks',
+      live: 'Live-Alben',
+      compilation: 'Compilations',
+      remix: 'Remixe',
+      'dj-mix': 'DJ-Mixe',
+      demo: 'Demos',
+    },
+    section: {
+      album: 'Alben',
+      mixtape: 'Mixtapes',
+      ep: 'EPs',
+      single: 'Singles',
+      other: 'Live, Compilations und Remixe',
+    },
+    filter: {
+      all: 'Alle',
+      missing: 'Herunterzuladen',
+      partly: 'Teilweise da',
+      complete: 'Vollständig',
+      not_watched: 'Nicht beobachtet',
+      off: 'Ausgeschaltet',
+      not_own: 'Gastauftritte',
+    },
+    state: {
+      complete: 'Vollständig · {have}/{total}',
+      partly: 'Teilweise · {have}/{total}',
+      missing: 'Herunterzuladen',
+      skipped: 'Vor der Beobachtung erschienen',
+      not_watched: 'Nicht beobachtet',
+      off: 'Aus',
+      not_own: 'Gastauftritt oder Bootleg',
+    },
   },
   watchStats: {
     colActivity: 'Aktivität',
@@ -1538,7 +1686,7 @@ export default {
       'Kommagetrennte Dateiendungen, zuerst die höchste Priorität (z. B. flac, mp3).',
     slskdMinBitrate: 'Minimale Bitrate für verlustbehaftete Formate',
     slskdMinBitrateHint:
-      'Im strikten Modus werden verlustbehaftete Dateien unter diesem Wert oder ohne gemeldete Bitrate abgelehnt. FLAC ist ausgenommen.',
+      'Verlustbehaftete Dateien mit niedrigerer gemeldeter Bitrate werden übersprungen. Dateien ohne Angabe bleiben erlaubt, außer die strikte Formatpriorität ist an. Im strikten Modus ist FLAC ausgenommen.',
     slskdAttempts: 'Kandidatenversuche',
     slskdAttemptsHint:
       'Im strikten Modus wird diese Anzahl je Format versucht, sonst insgesamt.',
@@ -1560,6 +1708,34 @@ export default {
       'Der Pfad innerhalb des Downtify-Containers, nicht auf dem Host.',
     slskdTimeout: 'Gesamtzeitlimit',
     slskdQueuedTimeout: 'Zeitlimit in Warteschlange',
+    slskdTimeoutHint:
+      'Wie lange ein Download dauern darf, bevor der nächste Kandidat versucht wird.',
+    slskdQueuedTimeoutHint:
+      'Wie lange in der Upload-Warteschlange eines anderen Nutzers gewartet wird, bevor es weitergeht.',
+    slskdProfile: 'Qualitätsprofil',
+    slskdProfileHint:
+      'Ein Ausgangspunkt für die Formatliste. Passe beliebige Felder unten an.',
+    slskdProfileDefault: 'Standard',
+    slskdProfileLossless: 'Verlustfrei zuerst',
+    slskdProfileLossy: 'Nur verlustbehaftet',
+    slskdAdvanced: 'Qualität und Abgleich feinabstimmen',
+    slskdAdvancedHint:
+      'Zusätzliche Bitrate-Regeln, Kandidatenversuche und Zeitlimits. Ausgeschaltet werden die zusätzlichen Bitrate-Regeln nicht verwendet.',
+    slskdUnknownBitrate: 'Dateien ohne angegebene Bitrate',
+    slskdUnknownBitrateHint:
+      'Manche Soulseek-Nutzer geben keine Bitrate an. Standard lehnt diese nur im strikten Modus mit Mindestbitrate ab.',
+    slskdUnknownAuto: 'Standard',
+    slskdUnknownAllow: 'Erlauben',
+    slskdUnknownReject: 'Ablehnen',
+    slskdPreferBitrate: 'Höchste Bitrate zuerst versuchen',
+    slskdPreferBitrateHint:
+      'Unter ausreichend passenden Dateien mit der besten Qualität beginnen statt mit dem ähnlichsten Dateinamen.',
+    slskdFormatFloors: 'Mindestbitrate pro Format',
+    slskdFormatFloorsHint:
+      'Leer lassen, um das Minimum oben zu verwenden. Effiziente Formate wie AAC (m4a) und Opus klingen schon bei niedrigeren Bitraten gut als MP3.',
+    slskdMaxBitrate: 'Maximale Bitrate',
+    slskdMaxBitrateHint:
+      '0 erlaubt alles. Etwa 400 überspringt verlustfreies Audio in .m4a-Dateien (ALAC) und hält Dateien klein.',
     slskdInPlace: 'Dateien im slskd-Ordner belassen',
     slskdInPlaceHint:
       'Ein: Dateien am Speicherort taggen und behalten. Aus: in Downloads kopieren und taggen; die Quelle wird erst nach erfolgreichem Import entfernt. Bei Fehlern bleibt sie erhalten.',
@@ -1622,10 +1798,18 @@ export default {
     syncDelay: 'Pause zwischen Synchronisierungsabfragen',
     syncDelayHint:
       'Warte nach jedem Stapel importierter Titel (Größe = parallele Downloads), bevor Songtexte, Cover und Genre gesucht werden. Das hilft, bei großen Ordnern Ratenbegrenzungen zu vermeiden.',
+    idsGroup: 'Song-IDs',
+    isrc: 'ISRC-Codes schreiben',
+    isrcHint:
+      'Speichert bei jedem neuen Download den ISRC – den Code einer Aufnahme –, damit derselbe Song auch unter anderem Namen erkannt wird. Wird bei Deezer nachgeschlagen und weggelassen, wenn er nicht sicher ist.',
     artGroup: 'Cover',
     coverArt: 'Cover einbetten',
     coverArtHint:
       'Deaktiviere die Option für kleinere Dateien und schnellere Downloads.',
+    coverMin: 'Mindestgröße des Covers',
+    coverMinHint:
+      'Darunter werden Spotify, iTunes und YouTube Music nach einem größeren Cover derselben Veröffentlichung gefragt, und das größte wird verwendet. Aus behält das Cover der Quelle des Titels.',
+    coverMinOff: 'Aus',
     coverSize: 'Covergröße',
     coverSizeHint:
       'Für Cover von YouTube Music und Deezer. Spotify-Cover werden immer in der größten verfügbaren Auflösung geladen.',
@@ -1653,6 +1837,48 @@ export default {
       'Community-Datenbank - einfache und zeitsynchronisierte Songtexte',
     lyricsNetease: 'NetEase Cloud Music',
     lyricsNeteaseHint: 'Großer Katalog, meist zeitsynchronisierte Songtexte',
+    ratingsGroup: 'Bewertungen von Deezer',
+    ratingsHint:
+      'Vergibt an deine Songs in Navidrome 0–5 Sterne danach, wie beliebt sie auf Deezer sind – wie dztnr. Die Sterne gehören zum oben eingetragenen Navidrome-Konto.',
+    ratingsRepeat: 'Wiederholen',
+    ratingsRepeatOff: 'Aus',
+    ratingsRepeatDaily: 'Jeden Tag',
+    ratingsRepeatWeekly: 'Jede Woche',
+    ratingsRepeatMonthly: 'Jeden Monat',
+    ratingsSkipRated: 'Songs mit Sternen überspringen',
+    ratingsSkipRatedHint:
+      'Sterne, die du selbst vergeben hast, bleiben erhalten. Spätere Durchläufe überspringen jeden Song, der schon Sterne hat.',
+    ratingsSkipStarred: 'Favoriten überspringen',
+    ratingsGrading: 'Bewertung',
+    ratingsGradingAbsolute: 'Weltweite Beliebtheit',
+    ratingsGradingArtist: 'Im Vergleich zum Top-Song des Künstlers',
+    ratingsGradingAlbum: 'Im Vergleich zum Top-Song des Albums',
+    ratingsGradingHint:
+      'Der Vergleich mit dem Top-Song des Künstlers gibt auch den Hits kleinerer Künstler 5 Sterne.',
+    ratingsRun: 'Jetzt ausführen',
+    ratingsPreview: 'Vorschau',
+    ratingsStop: 'Stopp',
+    ratingsReading: 'Deine Navidrome-Bibliothek wird gelesen…',
+    ratingsProgress: '{done} von {total} Songs',
+    ratingsLast:
+      'Letzter Durchlauf {when}: {rated} bewertet, {skipped} übersprungen, {notFound} auf Deezer nicht gefunden',
+    ratingsLastPreview:
+      'Vorschau {when}: {rated} würden bewertet, {skipped} übersprungen, {notFound} auf Deezer nicht gefunden',
+    ratingsStopped: 'Angehalten',
+    ratingsNext: 'Nächster Durchlauf {when}',
+    ratingsNextSoon: 'Nächster Durchlauf innerhalb der nächsten Stunde',
+    ratingsNever: 'Noch nicht ausgeführt',
+    ratingsFailedDeezer:
+      'Deezer war nicht erreichbar. Bereits vergebene Sterne bleiben erhalten.',
+    ratingsFailedNavidrome: 'Navidrome-Fehler: {message}',
+    ratingsFailed: 'Der Bewertungslauf ist fehlgeschlagen: {message}',
+    ratingsNotConfigured: 'Speichere zuerst die Navidrome-Anmeldung.',
+    ratingsBusy: 'Ein Bewertungslauf läuft bereits.',
+    ratingsColSong: 'Song',
+    ratingsColRank: 'Deezer-Beliebtheit',
+    ratingsColStars: 'Sterne',
+    ratingsUnmatched: 'Auf Deezer nicht gefunden ({count})',
+    ratingsFirstRows: 'Die ersten {count} Songs werden angezeigt.',
     navidromeTitle: 'Navidrome',
     navidromeHint:
       'Spiegele heruntergeladene Playlists in Navidrome. Der Musikordner muss Downtifys Downloads enthalten.',
@@ -1713,6 +1939,10 @@ export default {
     navidromeSync: 'Playlists in Navidrome erstellen',
     navidromeSyncHint:
       'Halte nach Playlist-Downloads und Überwachungsprüfungen eine gleichnamige Playlist in Navidrome aktuell.',
+    doctor: 'Doktor',
+    navidromeM3uImport: 'Navidrome die M3U-Playlists importieren lassen',
+    navidromeM3uImportHint:
+      'Navidrome macht aus jeder M3U, die Downtify schreibt, eine Playlist mit Cover. Ist das an, legt Downtify keine zweite über die API an.',
     navidromePublic: 'Navidrome-Playlists öffentlich machen',
     primaryLibrary: 'Primary library folder',
     primaryLibraryHint:
@@ -1927,6 +2157,17 @@ export default {
     running: 'Audio wird ersetzt …',
     done: 'Audio ersetzt',
     failed: 'Audio konnte nicht ersetzt werden',
+    handReplaced:
+      'Du hast dieses Audio am {date} von Hand ersetzt. Downloads lassen die Datei, wie sie ist.',
+    unprotect: 'Downloads dürfen sie ersetzen',
+    unprotected: 'Downloads können diese Datei wieder ersetzen',
+    uploading: 'Datei wird hochgeladen…',
+    fileTitle: 'Oder eine Datei von deinem Gerät verwenden',
+    fileHint:
+      'Eine {format}-Datei wird unverändert verwendet. Andere Audiodateien (MP3, FLAC, M4A, WAV…) werden in {format} umgewandelt.',
+    fileChoose: 'Datei auswählen…',
+    fileOther: 'Andere Datei auswählen…',
+    fileConverted: 'In {format} umgewandelt',
     source: {
       'youtube-music': 'YouTube Music',
       youtube: 'YouTube',
@@ -2211,6 +2452,10 @@ export default {
     playbackSpeed: 'Wiedergabegeschwindigkeit',
   },
   confirm: {
+    stopWatchingManyTitle: {
+      one: '{count} Überwachung beenden?',
+      other: '{count} Überwachungen beenden?',
+    },
     deleteTrackTitle: '„{title}“ löschen?',
     deleteTracksTitle: '{count} Titel löschen?',
     deleteTracksBody:
@@ -2281,5 +2526,196 @@ export default {
   },
   source: {
     from: 'Heruntergeladen von {source}',
+  },
+  doctor: {
+    title: 'Doktor',
+    intro:
+      'Neuere Downtify-Versionen beheben Probleme ab dann, aber Dateien und Playlists einer älteren Version bleiben, wie sie waren. Der Doktor findet diese Reste und repariert, was nachweislich sicher ist.',
+    checkup: 'Gesundheitscheck',
+    checkupHint:
+      'Prüft slskd-Reste, doppelte Songs und Playlists und was Navidrome zeigt. Ändert nichts.',
+    lastCheckup: 'Zuletzt geprüft: {when}',
+    runCheckup: 'Jetzt prüfen',
+    stop: 'Stoppen',
+    step: {
+      starting: 'Startet…',
+      library: 'Bibliothek wird gelesen…',
+      playlists: 'Playlists werden gelesen…',
+      duplicates: 'Suche nach doppelten Songs…',
+      monitor: 'Überwachte Playlists werden geprüft…',
+      navidrome: 'Navidrome wird gefragt…',
+      pausing: 'Warten, bis laufende Downloads fertig sind…',
+      listing: 'slskd-Ordner wird aufgelistet…',
+      verifying: 'Audio wird mit der Bibliothek verglichen…',
+      deleting: 'Wird entfernt…',
+      navidrome_scan: 'Warten auf den Navidrome-Scan…',
+      dedupe_check: 'Kopien werden geprüft…',
+      dedupe_relink: 'Playlists, Likes und Überwachungen werden verschoben…',
+      dedupe_remove: 'Die anderen Kopien werden entfernt…',
+      merging: 'Playlists werden zusammengeführt…',
+    },
+    slskdTitle: 'slskd-Reste',
+    slskdHint:
+      'Ältere Versionen ließen jede Soulseek-Datei nach dem Kopieren in die Bibliothek im slskd-Ordner liegen. Zum Löschen angeboten wird nur eine Datei, deren Audio mit einem Bibliothekssong identisch ist.',
+    slskdLeftovers: 'Dateien im slskd-Ordner',
+    slskdNotChecked: 'Den Gesundheitscheck starten, um sie zu zählen.',
+    slskdInPlace:
+      'Dateien bleiben im slskd-Ordner, er gehört also zur Bibliothek. Nichts aufzuräumen.',
+    slskdFound: 'Keine Bibliothekssongs: {files} · {size}',
+    slskdCheck: 'Downloads pausieren und prüfen',
+    slskdCheckTitle: 'slskd-Reste prüfen?',
+    slskdCheckBody:
+      'Zuerst werden Downloads pausiert und laufende zu Ende geführt, damit beim Vergleichen nichts geschrieben wird. Gelöscht wird erst nach deiner Bestätigung.',
+    queueHeld:
+      'Downloads sind pausiert, solange du entscheidest. Nach einer Stunde laufen sie von selbst weiter.',
+    slskdKeepResume: 'Behalten und Downloads fortsetzen',
+    status: {
+      verified: 'Identisch in der Bibliothek',
+      different: 'Ähnlich, nicht identisch',
+      unmatched: 'Nicht in der Bibliothek',
+      unreadable: 'Nicht lesbar',
+      recent: 'Kürzlich geändert',
+      missing: 'Verschwunden',
+    },
+    slskdVerifiedHint:
+      'Jede davon hat bitgenau dasselbe Audio wie die darunter genannte Bibliotheksdatei.',
+    showMore: 'Mehr zeigen',
+    slskdDelete: 'Identische Kopien löschen ({files} · {size})',
+    slskdDeleteTitle: 'Identische Kopien löschen?',
+    slskdDeleteBody:
+      'Aus dem slskd-Ordner zu entfernende Dateien: {files} ({size}). Jede wird direkt davor erneut geprüft: unverändert, und ihre Bibliothekskopie noch da. Danach laufen die Downloads weiter.',
+    slskdDeleteConfirm: 'Löschen',
+    slskdCleaned: 'Entfernt: {files} · frei: {size}',
+    slskdKeptChanged:
+      'Behalten, weil geändert oder Bibliothekskopie fehlte: {files}',
+    checkGone: 'Die Dateien sind von der Platte verschwunden',
+    checkQueueResumed: 'Downloads fortgesetzt',
+    checkNavidromeScan: 'Navidrome hat neu gescannt',
+    playlistsTitle: 'Doppelte Playlists',
+    playlistsHint:
+      'Zwei M3U-Dateien für eine Playlist, etwa eine, die dort liegen blieb, wo eine ältere Version schrieb. Zusammenführen behält jeden Song einmal, das Cover und eine Datei. Die Originale werden vorher gesichert.',
+    playlistsOk: 'Jede Playlist hat eine M3U-Datei.',
+    groupReason: {
+      name: 'Gleicher Name',
+      songs: 'Gleiche Songs',
+      manual: 'Deine Auswahl',
+    },
+    songsCount: 'Songs: {count}',
+    hasCover: 'Hat ein Cover',
+    keeps: 'Bleibt',
+    mergePlan: 'Ergebnis: {songs} Songs. Sie teilen {overlap} % ihrer Songs.',
+    mergeUnsafe:
+      'Nur {overlap} % der Songs stimmen überein; das könnten verschiedene Playlists sein. Nicht zusammengeführt.',
+    merge: 'Zusammenführen',
+    mergeTitle: 'Diese Playlists zusammenführen?',
+    mergeBody:
+      '{keeper} enthält dann alle {songs} Songs und das Cover; die anderen Dateien werden nach einer Sicherung entfernt.',
+    merged: '{path} enthält jetzt {songs} Songs.',
+    checkOthersGone: 'Die anderen M3U-Dateien sind weg',
+    checkCover: 'Das Cover liegt daneben',
+    checkNavidromeOne:
+      'Navidrome zeigt diese Playlist einmal (gefunden: {count})',
+    backupAt: 'Sicherung: {path}',
+    manualTitle: 'Playlists selbst wählen',
+    manualHint:
+      'Wähle zwei oder mehr M3U-Dateien, die eine Playlist sein sollten. Sie werden nur zusammengeführt, wenn die meisten Songs übereinstimmen.',
+    manualFilter: 'Playlists filtern',
+    manualCompare: 'Vergleichen',
+    navidromeHint:
+      'Was Navidrome und jede damit verbundene App wirklich zeigt.',
+    navidromeOff: 'Navidrome ist nicht eingerichtet.',
+    navidromeDown: 'Navidrome hat nicht geantwortet.',
+    navidromeNoAdmin:
+      'Trage unter Einstellungen → Navidrome einen Admin-Login ein, damit der Doktor importierte Playlists und ihre Dateien sieht.',
+    navidromeSummary: 'Playlists',
+    navidromeCounts:
+      'Doppelt: {duplicates} · M3U fehlt: {orphans} · Fehlende Songs: {incomplete}',
+    navidromeFix: 'Reparieren',
+    navidromeFixTitle: 'Navidrome-Playlists reparieren?',
+    navidromeFixBody:
+      'Die als „wird entfernt“ markierten Playlists werden gelöscht ({count}), dann scannt Navidrome neu.',
+    navidromeFixImport:
+      'Downtify legt außerdem keine eigene Kopie der Playlists mehr an, die Navidrome importiert.',
+    navidromeSuggestImport:
+      'Navidrome importiert Downtifys M3U-Dateien (mit Cover), und Downtify legt dieselben Playlists auch über die API an, daher erscheint jede doppelt.',
+    reason: {
+      m3u_and_api: 'Importierte M3U und Downtifys Kopie',
+      imports: 'Zweimal importiert',
+      api: 'Zweimal angelegt',
+      name: 'Gleicher Name',
+      orphan: 'Ihre M3U fehlt',
+    },
+    kind: {
+      import: 'Aus M3U importiert',
+      downtify: 'Von Downtify angelegt',
+      other: 'Andere',
+    },
+    willRemove: 'wird entfernt',
+    wouldLoseSongs: 'bleibt: hat Songs, die dem Import fehlen',
+    incomplete: 'Navidrome zeigt {songs} der {m3u} Songs aus der M3U.',
+    incompleteOutside: 'Songs außerhalb von Navidromes Musikordner: {count}.',
+    navidromeSongDupes: 'Doppelte Songs in Navidrome',
+    songDupesCounts:
+      'Mehrfach gelistete Songs: {groups} · zusätzliche Kopien: {extra} · in einem slskd-Ordner: {slskd}',
+    ndRemoved: 'Entfernte Playlists: {count}',
+    ndRemaining: 'Übrig: doppelt {duplicates}, M3U fehlt {orphans}',
+    duplicatesTitle: 'Doppelte Songs',
+    duplicatesHint:
+      'Bibliotheksdateien mit demselben Song. Hör dir jede Kopie an und behalte die beste: Ihre Playlists, Likes und Überwachungen übernehmen die der anderen, sodass nichts fehlt oder erneut heruntergeladen wird. Kopien, die wirklich verschiedene Versionen sind, lassen sich alle behalten.',
+    duplicatesExact: 'Gleiche Datei',
+    duplicatesLikely: 'Wahrscheinlich derselbe Song',
+    duplicatesCounts: 'Songs: {groups} · zusätzliche Dateien: {files} · {size}',
+    dupeKeep: 'Diese Kopie behalten',
+    dupeIn: 'In {playlists}',
+    dupeInNone: 'In keiner Playlist',
+    dupeTags: 'Tags: {title} · {album}',
+    dupeMerge: 'Ausgewählte Kopie behalten',
+    dupeKeepAll: 'Alle behalten, sie sind verschieden',
+    dupeMergeTitle: 'Nur diese Kopie behalten?',
+    dupeMergeBody:
+      '{keep} bleibt. Die anderen Kopien ({count}) werden {where} entfernt. Jede Playlist, jedes Like und jede Überwachung, die sie genutzt hat, nutzt jetzt die behaltene – nichts wird erneut heruntergeladen.',
+    dupeToTrash: 'in den Musik-Papierkorb (30 Tage)',
+    dupeForGood: 'endgültig',
+    dupeMergeConfirm: 'Behalten und die anderen entfernen',
+    dupeMerged: '{keep} behalten · entfernte Kopien: {count}',
+    dupeMergedPlaylists: 'Aktualisierte Playlists: {playlists}',
+    dupeCheckClean: 'Nichts verweist mehr auf die entfernten Kopien',
+    dupeLeftovers:
+      'Etwas verweist noch auf eine entfernte Kopie ({where}). Den Gesundheitscheck erneut starten.',
+    dupeFailed: 'Nicht entfernt: {files}',
+    dupeKeptApart: 'Als verschiedene Songs behalten: {count}',
+    dupeListAgain: 'Wieder anzeigen',
+    dupeKeptAllDone:
+      'Alle behalten. Sie erscheinen erst wieder, wenn eine weitere Kopie auftaucht.',
+    relinkedTitle: 'Mit neuer Spotify-ID erneut geladen',
+    relinkedHint:
+      'Spotify ersetzt manchmal einen Titel einer Playlist durch denselben Song mit neuer ID. Eine überwachte Playlist lädt ihn dann erneut.',
+    relinkedLabel: 'Gleicher Song, mehrere IDs',
+    relinkedCounts: 'Songs: {songs} · zusätzliche Dateien: {extra}',
+    error: {
+      doctor_busy: 'Der Doktor arbeitet bereits.',
+      doctor_failed: 'Der Doktor brach mit einem Fehler ab. Siehe Server-Log.',
+      queue_busy:
+        'Laufende Downloads wurden nicht rechtzeitig fertig. Später erneut versuchen.',
+      scan_first: 'Zuerst die Reste erneut prüfen.',
+      m3u_not_found: 'Diese M3U ist weg. Den Gesundheitscheck erneut starten.',
+      m3u_manual:
+        'In der Bibliothek erstellte Playlists werden nicht zusammengeführt.',
+      need_two: 'Mindestens zwei Playlists wählen.',
+      playlists_differ:
+        'Zu wenige Songs stimmen überein; das sind wohl verschiedene Playlists.',
+      not_flagged: 'Zuerst den Gesundheitscheck erneut starten.',
+      dedupe_rescan:
+        'Die Liste ist veraltet. Den Gesundheitscheck erneut starten.',
+      dedupe_missing:
+        'Eine der Dateien ist weg. Den Gesundheitscheck erneut starten.',
+      dedupe_invalid: 'Eine Kopie zum Behalten auswählen.',
+      dedupe_trash:
+        'Der Musik-Papierkorb kann eine der Kopien nicht aufnehmen (ihr Ordner ist nicht abgedeckt oder sie wird abgespielt). Es wurde nichts geändert.',
+      dedupe_replacement_pending:
+        '„Audio ersetzen“ arbeitet noch an einer dieser Dateien.',
+      doctor_not_ready: 'Downtify startet noch. Gleich noch einmal versuchen.',
+      navidrome_off: 'Navidrome ist nicht eingerichtet.',
+    },
   },
 }
