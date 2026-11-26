@@ -29,7 +29,7 @@ Varsayılan mod **kapakları, sözleri ve etiketleri** yeniden yazar. İsteğe b
 Bir parça şu durumlarda geride sayılır:
 
 - gömülü kapağının kısa kenarı **hedef boyuttan küçükse** (hiç kapağı olmayan parça da sayılır);
-- **ne** gömülü sözü **ne de** bir `.lrc` yan dosyası varsa (dosyanın yanında ya da Ayarlar’daki söz klasöründe);
+- **ne** gömülü sözü **ne de** bir `.lrc` yan dosyası varsa (dosyanın yanında ya da Ayarlar’daki söz klasöründe) — [Yalnızca zaman eşlemeli sözler](lyrics.md#time-synced-lyrics-only) açıkken **zaman eşlemeli** sözü olmadığında, ve yalnızca eşlemeli sözler yazılır;
 - etiketlerinde **albüm**, **albüm sanatçısı**, **yıl** veya **parça numarası**ndan biri eksikse.
 
 **Etiketleri yenile** yalnızca Downtify’ın hâlâ Spotify parça kimliğine sahip olduğu parçalar için çalışır — Spotify bağlantısından indirdikleri, [parça dizininde](library-catalog.md#what-gets-stored) tutulanlar. Diğer parçalar kuyruğa alınır ama _Yapacak bir şey yok_ olarak döner.
@@ -76,9 +76,23 @@ Downtify her parça ve kategori için şunları hatırlar: ne zaman denetlendiğ
 
 Bir tarama, her şey yakın zamanda denetlendiği _için_ yapacak bir şey bulamazsa bunu söyler ve açıklamasız bir “iyileştirilecek bir şey yok” bırakmak yerine belleksiz yeniden çalıştırmayı önerir.
 
+### Tara ve söz bul
+
+**Tara ve söz bul** kitaplığı tarar ve tarama biter bitmez, arada seçim yapmadan sözü olmayan parçalar için söz aramaya başlar. Bu çalıştırmada yalnızca söz aranır; kapaklar ve etiketler başka bir çalıştırmaya kalır.
+
+### Eski şarkılar için ISRC
+
+Downtify ISRC yazmaya başlamadan önce indirilen şarkılarda ISRC yoktur. ISRC, kaydın kendi kodudur: Downtify bir şarkının kitaplıkta olup olmadığını, müzik çöp kutusu da sonradan geri yükleyebileceği bir dosyayı onunla tanır. ISRC’si, sağlayıcı kimliği ve albüm etiketi olmayan bir dosya çöp kutusuna gidemez.
+
+**ISRC ara (hiçbir şey yazmaz)** ISRC’si olmayan dosyaları bulur, her birini arar ve ekleyeceklerini parça listesinde gösterir (`Would add ISRC …`); hiçbir dosyayı değiştirmez. **ISRC ekle** aynısını yapar ve yazar. Yalnızca ISRC etiketi eklenir, her yükseltmedeki gibi doğrulanmış kopya üzerinden; dosyayı gösteren her şey (listeler, beğeniler, sahipler) onu izler.
+
+Bir kod yalnızca Deezer şüphesiz doğruladığında eklenir; kurallar yeni indirmelerdekiyle aynıdır: aynı ilk sanatçı ve başlık, en fazla 3 saniye süre farkı ve eşleşen tüm sonuçların tek bir kodda birleşmesi. Diğer her dosya olduğu gibi kalır ve **Bir parçayı şu süre boyunca yeniden denetleme** dolana kadar tekrar sorulmaz. İki tarama da kapak, söz veya etiketlere bakmaz; normal tarama ise ISRC aramaz.
+
+Deezer’ın bulamadığı dosyalar için [Şarkıları sesinden tanı](acoustid.md) AcoustID’ye sorar: isteğe bağlıdır ve kendi ücretsiz API anahtarınızı gerektirir.
+
 ## Çalışırken
 
-İlerleme paneli kuyruktan biten parçaları, yaklaşık bir veri miktarını (`8.4 GB of 51.3 GB`) ve kaç tanesinin iyileştirildiğini, yapacak bir şeyi olmadığını ya da başarısız olduğunu gösterir. Her parça ne yaptığını gösterir — _Eşleştiriliyor_, _Kapak aranıyor_, _Şarkı sözü aranıyor_, _Dosya yazılıyor_ — ve neyin değiştiğiyle biter, örn. `artwork 1200px (itunes)`.
+İlerleme paneli kuyruktan biten parçaları, yaklaşık bir veri miktarını (`8.4 GB of 51.3 GB`) ve kaç tanesinin iyileştirildiğini, yapacak bir şeyi olmadığını ya da başarısız olduğunu gösterir. Her parça ne yaptığını gösterir — _Eşleştiriliyor_, _Kapak aranıyor_, _Şarkı sözü aranıyor_, _Dosya yazılıyor_ — ve neyin değiştiğiyle biter, örn. `artwork 1200px (itunes)`. Çalıştırma söz aradığında, altındaki bir satır söz eklenen parçaları, hiçbir sağlayıcının sözü olmayanları ve başarısız olanları sayar.
 
 **Duraklat**, işlemdeki parçadan sonra durur ve kuyruğu korur. **Durdur** geri kalanını bırakır; zaten iyileştirilen parçalar iyileştirilmiş kalır. Sayfadan ayrılabilirsiniz — çalıştırma sürer ve açık diğer sekmeler onu izler.
 

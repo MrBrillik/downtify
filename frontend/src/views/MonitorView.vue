@@ -30,7 +30,7 @@
         <span class="sr-only">{{ copy.urlLabel }}</span>
         <input
           v-model="newUrl[tab]"
-          type="url"
+          :type="tab === 'artist' ? 'text' : 'url'"
           :placeholder="copy.urlPlaceholder"
           class="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-faint"
         />
@@ -46,14 +46,27 @@
         <UiButton
           type="submit"
           variant="primary"
-          :icon="tab === 'artist' ? 'user' : 'radar'"
+          :icon="artistQuery ? 'search' : tab === 'artist' ? 'user' : 'radar'"
           :loading="adding"
           :disabled="!newUrl[tab].trim()"
         >
-          {{ copy.add }}
+          {{ artistQuery ? t('monitor.searchArtists') : copy.add }}
         </UiButton>
       </div>
     </form>
+    <ArtistNameSearch
+      v-if="tab === 'artist'"
+      ref="nameSearch"
+      :query="artistQuery"
+      :busy="adding"
+      @choose="followSearched"
+    />
+    <SpotifyUserLinkDialog
+      :user-id="userLink.id"
+      :link="userLink.url"
+      @back="userLink = { id: '', url: '' }"
+      @search="searchUserLinkName"
+    />
     <div
       v-if="tab === 'artist'"
       class="-mt-3 rounded-panel border border-line-2 bg-surface px-4 py-3"
@@ -93,12 +106,15 @@
       }}
     </p>
 
-    <div
+    <UiSkeletonRows
       v-if="tab !== 'wanted' && loading && !items.length"
-      class="flex flex-col gap-2"
-    >
-      <UiSkeleton v-for="n in 4" :key="n" class="h-[72px] !rounded-[12px]" />
-    </div>
+      :count="4"
+      cover="size-12"
+      :round="tab === 'artist'"
+      action
+      row-class="h-[72px] px-4"
+      gap="gap-0"
+    />
 
     <UiEmpty
       v-else-if="tab !== 'wanted' && !inTab.length"
@@ -333,12 +349,13 @@
             <li
               v-for="item in visible"
               :key="item.id"
-              class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 rounded-[12px] px-4 py-3 transition-colors hover:bg-surface monitor-table-grid"
+              class="grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 rounded-[12px] px-4 py-3 transition-colors hover:bg-surface monitor-table-grid"
               :class="
                 selecting && selected.has(item.id)
                   ? 'bg-surface ring-1 ring-accent/40 ring-inset'
                   : ''
               "
+              @click="openRow(item, $event)"
             >
               <div class="flex min-w-0 items-center gap-3">
                 <input
@@ -354,7 +371,9 @@
                   :class="item.enabled ? '' : 'opacity-50'"
                 >
                   <CoverArt
-                    :src="tab === 'artist' ? artistCover(item) : ''"
+                    :src="
+                      tab === 'artist' ? artistCover(item) : watchCoverUrl(item)
+                    "
                     :name="item.name"
                     :round="tab === 'artist'"
                     :icon="tab === 'artist' ? 'user' : 'playlist'"
@@ -363,14 +382,13 @@
                     class="size-11"
                   />
                   <div class="min-w-0">
-                    <button
-                      type="button"
+                    <RouterLink
+                      :to="watchRouteFor(item)"
                       class="block max-w-full whitespace-normal break-words text-left text-sm font-semibold hover:underline"
                       :title="item.name"
-                      @click="editing = item"
                     >
                       {{ item.name }}
-                    </button>
+                    </RouterLink>
                     <a
                       :href="item.url"
                       target="_blank"
@@ -437,7 +455,7 @@
                       : ''
                   "
                 >
-                  <WatchSourceBadge :source="item.source" />
+                  <WatchSourceBadge :source="item.source" :url="item.url" />
                 </span>
                 <UiSelect
                   :class="
@@ -597,7 +615,13 @@
 
     <WatchEditDialog
       :watch="editing"
-      :cover="editing && tab === 'artist' ? artistCover(editing) : ''"
+      :cover="
+        editing
+          ? tab === 'artist'
+            ? artistCover(editing)
+            : watchCoverUrl(editing)
+          : ''
+      "
       @close="editing = null"
       @saved="onSaved"
     />
@@ -628,11 +652,14 @@ import UiMenu from '/src/components/ui/UiMenu.vue'
 import UiSelect from '/src/components/ui/UiSelect.vue'
 import UiSegmented from '/src/components/ui/UiSegmented.vue'
 import UiSkeleton from '/src/components/ui/UiSkeleton.vue'
+import UiSkeletonRows from '/src/components/ui/UiSkeletonRows.vue'
 import UiSwitch from '/src/components/ui/UiSwitch.vue'
 import UiTabs from '/src/components/ui/UiTabs.vue'
 import PageHeader from '/src/components/library/PageHeader.vue'
 import ReleaseFilters from '/src/components/monitor/ReleaseFilters.vue'
 import ArtistSuggestions from '/src/components/monitor/ArtistSuggestions.vue'
+import ArtistNameSearch from '/src/components/monitor/ArtistNameSearch.vue'
+import SpotifyUserLinkDialog from '/src/components/monitor/SpotifyUserLinkDialog.vue'
 import WantedReleases from '/src/components/monitor/WantedReleases.vue'
 import WatchEditDialog from '/src/components/monitor/WatchEditDialog.vue'
 import WatchSourceBadge from '/src/components/monitor/WatchSourceBadge.vue'
@@ -641,6 +668,8 @@ import API from '/src/model/api'
 import monitorAPI from '/src/model/monitor'
 import { useUi } from '/src/model/ui'
 import { artistPhotoSource } from '/src/lib/artistPhotoProxy'
+import { confirmWatchMix } from '/src/lib/spotifyMix'
+import { checkToastKey } from '/src/lib/spotifyCompanion'
 import { formatBytes, timeAgo } from '/src/lib/format'
 import {
   STAT_PERIODS,
@@ -657,8 +686,12 @@ import {
   sortWatches,
   RELEASE_TYPES,
   releaseFilterSummary,
+  watchCoverUrl,
   watchKind,
   watchKindOfUrl,
+  artistNameQuery,
+  nameFromSpotifyUser,
+  spotifyUserOf,
 } from '/src/lib/watches'
 import {
   keepExisting,
@@ -690,6 +723,13 @@ const adding = ref(false)
 const newUrl = reactive({ playlist: '', artist: '' })
 const addError = reactive({ playlist: '', artist: '' })
 const wrongKind = ref(null)
+// A name typed in the Artists box (not a link): its matches show under it.
+const artistQuery = computed(() =>
+  tab.value === 'artist' ? artistNameQuery(newUrl.artist) : ''
+)
+const nameSearch = ref(null)
+// A pasted Spotify user link waiting on the warning dialog.
+const userLink = ref({ id: '', url: '' })
 const newInterval = ref(360)
 // A new artist watch's filters (the artists tab's form).
 const newReleaseTypes = ref([...RELEASE_TYPES])
@@ -1091,6 +1131,19 @@ function pick(item, event) {
   lastPicked = item.id
 }
 
+// A click on the row's empty space opens the watch's page (in "Select",
+// it picks the row). Its buttons, links and menus keep their own clicks,
+// and dragging to select text opens nothing.
+const ROW_CONTROLS =
+  'a, button, input, select, textarea, label, [role="button"], [role="menu"], [role="menuitem"], [role="listbox"], [role="option"]'
+
+function openRow(item, event) {
+  if (event.target.closest?.(ROW_CONTROLS)) return
+  if (window.getSelection?.()?.toString()) return
+  if (selecting.value) pick(item, event)
+  else router.push(watchRouteFor(item))
+}
+
 // Escape leaves "Select", unless it is closing a dialog (the capture
 // phase sees the dialog before Escape closes it).
 function onSelectKey(event) {
@@ -1216,6 +1269,15 @@ async function add() {
   const url = newUrl[kind].trim()
   addError[kind] = ''
   wrongKind.value = null
+  const userId = spotifyUserOf(url)
+  if (userId) {
+    userLink.value = { id: userId, url }
+    return
+  }
+  if (kind === 'artist' && artistQuery.value) {
+    nameSearch.value?.now()
+    return
+  }
   const detected = watchKindOfUrl(url)
   if (detected && detected !== kind) {
     addError[kind] =
@@ -1225,6 +1287,7 @@ async function add() {
     wrongKind.value = detected
     return
   }
+  if (kind === 'playlist' && !(await confirmWatchMix(url, { ui, t }))) return
   adding.value = true
   try {
     const res = await monitorAPI.addMonitoredPlaylist(
@@ -1262,6 +1325,25 @@ async function chooseSuggestedArtist(artist) {
   watchForm.value?.querySelector('input')?.focus({ preventScroll: true })
 }
 
+// An artist picked from the name search: followed by its link.
+async function followSearched(candidate) {
+  newUrl.artist = candidate.url
+  await add()
+}
+
+// "Find the artist instead" in the Spotify user link dialog: the Artists
+// tab, searching the account's handle when it reads like a name.
+async function searchUserLinkName() {
+  const name = nameFromSpotifyUser(userLink.value.id)
+  const from = tab.value
+  userLink.value = { id: '', url: '' }
+  newUrl[from] = ''
+  newUrl.artist = name
+  if (from !== 'artist') await router.push(tabRoute('artist'))
+  await nextTick()
+  watchForm.value?.querySelector('input')?.focus({ preventScroll: true })
+}
+
 function moveToOtherTab() {
   const target = wrongKind.value
   const from = tab.value
@@ -1294,8 +1376,8 @@ function onSaved(updated) {
 async function check(item) {
   checking.value = new Set([...checking.value, item.id])
   try {
-    await monitorAPI.checkMonitoredPlaylist(item.id)
-    ui.toast(t('monitor.checking', { name: item.name }))
+    const res = await monitorAPI.checkMonitoredPlaylist(item.id)
+    ui.toast(t(checkToastKey(res), { name: item.name }))
     setTimeout(load, 4000)
   } catch {
     ui.toast(t('toast.actionFailed'), { kind: 'error' })

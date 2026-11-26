@@ -262,6 +262,18 @@ export default {
     noMatch: 'Nada coincide',
     noMatchHint: 'Prueba con otras palabras u otro filtro.',
   },
+  whatsNew: {
+    title: 'Novedades de Downtify {version}',
+    intro: 'Downtify se actualizó a la {version}. Esto es lo que cambió:',
+    noHighlights:
+      'Downtify se actualizó a la {version}. La lista completa de cambios está en GitHub.',
+    changelog: 'Registro de cambios completo',
+    gotIt: 'Entendido',
+    star: '¿Te gusta Downtify? Dale una estrella en GitHub',
+    reopen: 'Novedades',
+    reopenHint:
+      'Lo más destacado de esta versión y un enlace a su registro de cambios completo.',
+  },
   common: {
     cancel: 'Cancelar',
     confirm: 'Confirmar',
@@ -481,6 +493,9 @@ export default {
       other: 'Descargar {count} nuevas',
     },
     redownloadAll: 'Descargar todo de nuevo',
+    downloadAsAlbum: 'Descargar como álbum',
+    downloadAsAlbumHint:
+      'Guarda todas las canciones como un solo álbum con el nombre de la playlist, atribuido a Various Artists, en una sola carpeta.',
     downloadSelected: 'Descargar seleccionadas',
     allHandled: 'Ya está en tu biblioteca o en la cola',
     addPlaylist: 'Añadir a mis listas',
@@ -507,6 +522,58 @@ export default {
     selectAll: 'Seleccionar todo',
     playCountSpotify: 'Reproducciones en Spotify',
     playCountYoutubeMusic: 'Reproducciones en YouTube Music (aproximado)',
+  },
+  slskdMisses: {
+    title: 'Por qué no se usó slskd',
+    hint: 'Canciones que descargó otra fuente, o que no se encontraron, después de que slskd no tuviera nada. Pulsa un motivo para ver ejemplos y qué cambiar.',
+    reset: 'Reiniciar',
+    resetTitle: '¿Empezar la cuenta de nuevo?',
+    resetBody:
+      'Olvida todos los motivos registrados hasta ahora, para que las próximas descargas muestren si un cambio de ajustes ayudó. Las canciones y archivos no se tocan.',
+    empty:
+      'Nada todavía: desde el último reinicio, slskd sirvió todas las descargas que se le pidieron.',
+    since: '{count} canciones desde {when}',
+    usedInstead: 'Usado en su lugar:',
+    nothingFound: 'nada encontrado',
+    reason: {
+      not_configured: 'slskd sin configurar',
+      unreachable: 'No se pudo conectar con slskd',
+      search_failed: 'La búsqueda no empezó',
+      search_timeout: 'La búsqueda se quedó sin tiempo',
+      no_results: 'Nadie la compartía',
+      no_match: 'Ningún archivo coincidía',
+      low_confidence: 'Coincidencia bajo la puntuación mínima',
+      quality_filtered: 'Bloqueado por las reglas de calidad',
+      timeout: 'La descarga se quedó sin tiempo',
+      transfer_failed: 'Fallaron las transferencias',
+      tag_mismatch: 'Canción equivocada en el archivo',
+      unknown: 'Desconocido',
+    },
+    fix: {
+      not_configured:
+        'Rellena la URL del servidor y la clave API en Ajustes → Fuentes de audio.',
+      unreachable:
+        'slskd no estaba disponible en ese momento. Comprueba que funciona y que la URL es correcta.',
+      search_failed:
+        'slskd rechazó la búsqueda, a menudo mientras aún se conecta a la red Soulseek.',
+      search_timeout:
+        'Las búsquedas tardaron más que el límite. Sube el tiempo límite total en Ajustes → Fuentes de audio.',
+      no_results:
+        'Nadie tenía la canción con un hueco de subida libre. Las canciones raras a menudo no están en Soulseek; otro intento más tarde puede encontrarlas.',
+      no_match:
+        'Llegaron archivos, pero ninguno coincidía lo bastante con título, artista y duración.',
+      low_confidence:
+        'Apareció un archivo parecido, pero por debajo del umbral que evita canciones equivocadas (remixes, versiones en directo).',
+      quality_filtered:
+        'Se encontraron archivos que coincidían, pero ninguno pasó las reglas de formato y bitrate. Permitir más formatos, un bitrate mínimo más bajo o archivos sin bitrate indicado los deja pasar.',
+      timeout:
+        'Se eligió un archivo, pero no llegó a tiempo. Sube el tiempo límite total o en cola.',
+      transfer_failed:
+        'Cada archivo elegido fue rechazado o nunca llegó completo (usuarios desconectados, colas largas). Más intentos de candidatos prueban más archivos.',
+      tag_mismatch:
+        'Las etiquetas del archivo descargado nombraban otra canción, así que se apartó y se guardó en la carpeta de slskd.',
+      unknown: 'Registrado sin motivo.',
+    },
   },
   queue: {
     globalPause: 'Pausar descargas y seguimientos',
@@ -573,6 +640,13 @@ export default {
       'Eso no parece un enlace de vídeo de YouTube ni de canción de SoundCloud.',
     playlistDownloads: 'Descargas de playlists',
     sources: 'Descargado desde',
+    fromWatch: 'De {name}',
+    fromWatchTitle: 'El Monitor lo descarga para {name}. Abre el seguimiento.',
+    watches: 'Descargas de seguimientos',
+    watchesHint:
+      'Los seguimientos del Monitor de los que vienen las canciones de esta cola. Abre uno para pausarlo o dejar de seguirlo.',
+    watchWaiting: 'faltan {count}',
+    openWatchOriginal: 'Abrir el original',
     noSourcesYet: 'Las descargas completadas muestran su origen aquí.',
     importTitle: 'Importar una biblioteca',
     importHint:
@@ -741,6 +815,35 @@ export default {
     ofBytes: '{done} de {total}',
     longJob:
       'Una biblioteca grande tarda. Puedes salir de esta página, y un reinicio retoma la cola.',
+    lyricsQuickTitle: 'Letras que faltan',
+    lyricsQuickHint:
+      'Escanea la biblioteca en busca de pistas sin letra y las busca enseguida, sin elegir nada entre medias. Las demás mejoras quedan para otra vez.',
+    lyricsQuickButton: 'Escanear y buscar letras',
+    isrc: 'Añadir ISRC',
+    isrcHint:
+      'Añade el ISRC de la grabación a los archivos que no lo tienen, solo cuando Deezer lo confirma sin duda.',
+    isrcQuickTitle: 'ISRC para canciones antiguas',
+    isrcQuickHint:
+      'Las canciones descargadas antes de que Downtify escribiera ISRC no tienen ninguno. El ISRC es el código propio de la grabación: con él Downtify detecta duplicados y la papelera de música reconoce un archivo. Solo se añaden los códigos que Deezer confirma sin duda (mismo artista y título, duración con 3 segundos de margen); los demás archivos quedan exactamente igual. Búscalos primero para ver la lista.',
+    isrcLookupButton: 'Buscar ISRC (no escribe nada)',
+    isrcAddButton: 'Añadir ISRC',
+    acoustid: 'Añadir ISRC por sonido',
+    acoustidHint:
+      'Identifica los archivos sin ISRC por su sonido (AcoustID) y añade el ISRC solo cuando la coincidencia es segura.',
+    acoustidQuickTitle: 'Identificar canciones por su sonido',
+    acoustidQuickHint:
+      'Para los archivos que Deezer no ubica: se toma la huella de cada uno y se busca en AcoustID. Solo se añade un ISRC cuando AcoustID está seguro de que el archivo es la canción que dicen sus etiquetas y MusicBrainz conoce exactamente un ISRC para ella. Los que identifica como otra canción, o no identifica, quedan tal cual, y nunca se escriben IDs de MusicBrainz. Búscalos primero para ver la lista.',
+    acoustidLookupButton: 'Buscar por sonido (no escribe nada)',
+    acoustidAddButton: 'Añadir ISRC por sonido',
+    acoustidOff: 'AcoustID está desactivado.',
+    acoustidNoKey: 'Guarda primero tu clave de API de AcoustID.',
+    acoustidNoTool:
+      'El servidor no puede crear huellas: instala fpcalc (Chromaprint).',
+    acoustidOpenSettings: 'Abrir Ajustes',
+    lyricsPlainOnly:
+      'Solo letra sin sincronizar: {count} — se cambia por la sincronizada cuando se encuentra',
+    lyricsOutcome:
+      'Letras añadidas: {added} · No encontradas: {notFound} · Fallidas: {failed}',
     completed: 'Mejoradas',
     skipped: 'Nada que hacer',
     failed: 'Fallaron',
@@ -756,6 +859,7 @@ export default {
     stageArtwork: 'Buscando portada',
     stageLyrics: 'Buscando letra',
     stageWriting: 'Escribiendo el archivo',
+    stageFingerprint: 'Tomando la huella',
     loadFailed: 'No se pudo cargar la mejora de la biblioteca',
   },
   usage: {
@@ -986,6 +1090,21 @@ export default {
     },
     missingHint:
       'Están en la playlist pero no en tu biblioteca — porque fallaron o se añadieron después.',
+    heldHint: {
+      one: '{count} de ellas ya está en tu biblioteca, con otro nombre o en otra carpeta.',
+      other:
+        '{count} de ellas ya están en tu biblioteca, con otro nombre o en otra carpeta.',
+    },
+    addFromLibrary: {
+      one: 'Añadir {count} de la biblioteca',
+      other: 'Añadir {count} de la biblioteca',
+    },
+    addedFromLibrary: {
+      one: 'Se añadió {count} canción de tu biblioteca',
+      other: 'Se añadieron {count} canciones de tu biblioteca',
+    },
+    addedFromLibraryNone:
+      'Ninguna coincidió lo suficiente para añadirla: su duración o versión difiere de la de la lista.',
     showMissing: 'Mostrar canciones',
     downloadMissing: {
       one: 'Descargar {count} faltante',
@@ -1085,9 +1204,13 @@ export default {
       'Cambiar el tamaño de la sección de controles de reproducción',
     nowPlaying: 'Reproduciendo',
     openNowPlaying: 'Abrir reproducción actual',
+    moreControls: 'Más controles',
+    closePlayer: 'Cerrar reproductor',
     closeNowPlaying: 'Cerrar reproducción actual',
     queue: 'Cola',
     upNext: 'A continuación',
+    hideUpNext: 'Ocultar a continuación',
+    showUpNext: 'Mostrar a continuación',
     lyrics: 'Letra',
     karaoke: 'Karaoke',
     karaokeWindow: 'Abrir en una ventana nueva',
@@ -1128,6 +1251,16 @@ export default {
     noLyricsHint:
       'Activa «Descargar letras» en Ajustes para guardarlas con las nuevas descargas.',
     lyricsNotSynced: 'Esta letra no está sincronizada.',
+    lyricsTiming: 'Ajustar sincronía de la letra',
+    lyricsSooner: 'Mostrar la letra antes',
+    lyricsLater: 'Mostrar la letra después',
+    lyricsOffsetValue: '{value} s',
+    lyricsOffsetHint:
+      'Mueve la letra hasta que coincida con el canto y guarda. Otros reproductores también verán el cambio.',
+    lyricsOffsetSave: 'Guardar',
+    lyricsOffsetReset: 'Restablecer',
+    lyricsOffsetSaved: 'Sincronía de la letra guardada',
+    lyricsOffsetFailed: 'No se pudo guardar la sincronía de la letra',
     cannotPlay: 'Este archivo no se puede reproducir.',
     sleepTimer: 'Temporizador',
     sleepMinutes: { one: 'En {count} minuto', other: 'En {count} minutos' },
@@ -1220,6 +1353,7 @@ export default {
       one: '{count} lanzamiento',
       other: '{count} lanzamientos',
     },
+    wantedUpcoming: '{count} anunciados',
     wantedUnchecked: {
       one: '{count} lanzamiento sin comprobar todavía',
       other: '{count} lanzamientos sin comprobar todavía',
@@ -1277,6 +1411,14 @@ export default {
     pause: 'Pausar',
     resume: 'Reanudar',
     stop: 'Dejar de vigilar',
+    watched: 'Vigilando',
+    personalMixTitle: 'Un mix de Spotify hecho para una persona',
+    personalMixBody:
+      'Daily Mix, Descubrimiento semanal, Radar de Novedades y las demás listas «hechas para ti» de Spotify muestran tus canciones solo a ti, con tu sesión iniciada. Downtify lee Spotify sin cuenta, así que recibe la versión que Spotify muestra a quien no ha iniciado sesión, a menudo con canciones completamente distintas. Para quedarte con tu versión, copia sus canciones a una lista tuya en Spotify y usa esa.',
+    personalMixWatch: 'Vigilar de todos modos',
+    personalMixBadge: 'Mix personal',
+    companionQueued:
+      'El compañero de Spotify lee «{name}» a continuación y luego se comprueba',
     openSource: 'Abrir original',
     everyMinutes: { one: 'Cada minuto', other: 'Cada {count} minutos' },
     everyHours: { one: 'Cada hora', other: 'Cada {count} horas' },
@@ -1287,8 +1429,19 @@ export default {
     urlLabelArtist: 'Enlace del artista',
     urlPlaceholderPlaylist:
       'Pega el enlace de una playlist de Spotify, Deezer o YouTube Music',
-    urlPlaceholderArtist:
-      'Pega el enlace de un artista de Spotify o YouTube Music',
+    urlPlaceholderArtist: 'Pega el enlace de un artista o escribe un nombre',
+    searchArtists: 'Buscar',
+    searchArtistsFor: 'Artistas llamados «{name}»',
+    searchArtistsHelp:
+      'Mira la foto y abre el perfil si tienes dudas; luego sigue al correcto.',
+    userLinkTitle: 'Ese es un enlace de usuario de Spotify, no de artista',
+    userLinkBody:
+      'open.spotify.com/user/… es la cuenta de un oyente: las listas que alguien creó, no la música de un artista. Downtify no puede seguirla. Los lanzamientos de un artista están en su página de artista, open.spotify.com/artist/…, que tiene todo artista con música en Spotify.',
+    userLinkYours: 'Tu enlace',
+    userLinkArtist: 'Enlace de artista',
+    userLinkHint: 'Busca el nombre del artista y elígelo por su foto.',
+    userLinkBack: 'No, volver',
+    userLinkSearch: 'Buscar al artista',
     watchPlaylist: 'Vigilar playlist',
     watchArtist: 'Vigilar artista',
     explainerPlaylists:
@@ -1397,6 +1550,7 @@ export default {
     filter: {
       all: 'Todos',
       missing: 'Por descargar',
+      upcoming: 'Próximos',
       partly: 'En parte',
       complete: 'Completos',
       not_watched: 'No seguidos',
@@ -1407,6 +1561,8 @@ export default {
       complete: 'Completo · {have}/{total}',
       partly: 'En parte · {have}/{total}',
       missing: 'Por descargar',
+      upcoming: 'Sale el {date}',
+      upcomingNoDate: 'Próximamente',
       skipped: 'Anterior al seguimiento',
       not_watched: 'No seguido',
       off: 'Desactivado',
@@ -1499,6 +1655,9 @@ export default {
       one: '{count} canción sigue fallando',
       other: '{count} canciones siguen fallando',
     },
+    failuresClear: 'Vaciar',
+    failuresClearHint:
+      'Vaciar empieza la lista de nuevo tras cambiar un ajuste; las canciones que sigan fallando vuelven en la próxima comprobación.',
     attempts: { one: '{count} intento', other: '{count} intentos' },
     lastTried: 'último intento {when}',
     songsTitle: 'Canciones de esta vigilancia',
@@ -1621,6 +1780,19 @@ export default {
     showLyrics: 'Mostrar letras en el reproductor',
     showLyricsHint:
       'Desactívalo para ocultar el panel de letras, su botón y su atajo. Tus archivos conservan las letras y las descargas siguen buscándolas.',
+    playVideos: 'Reproducir videoclips',
+    playVideosHint:
+      'Cuando una canción tiene videoclip, Reproduciendo lo muestra de fondo, oscurecido y sin sonido: la portada, la letra y la canción siguen igual.',
+    musicVideosGroup: 'Videoclips',
+    musicVideos: 'Descargar videoclips',
+    musicVideosHint:
+      'Guarda el videoclip oficial de cada canción descargada en la misma carpeta, para Plex, Jellyfin y el reproductor. Los vídeos se buscan de uno en uno después de la canción, hasta 1080p.',
+    musicVideoName: 'Nombre del archivo de vídeo',
+    musicVideoNameHint:
+      'Sin la extensión. Variables: {variables}. El predeterminado, el nombre del archivo de la canción más «-video», es como Plex vincula un vídeo a su pista.',
+    musicVideoFormat: 'Formato de vídeo',
+    musicVideoFormatHint:
+      'MP4 se reproduce en todas partes. Elige MKV si tu servidor multimedia muestra los vídeos MP4 como canciones.',
     searchGroup: 'Búsqueda',
     playlistsGroup: 'Playlists',
     showPublicPlaylists: 'Mostrar playlists públicas',
@@ -1629,6 +1801,9 @@ export default {
     allowPlaylistSharing: 'Permitir que los usuarios compartan playlists',
     allowPlaylistSharingHint:
       'Los usuarios pueden compartir sus playlists con otros o hacerlas públicas. Si se desactiva, todas las playlists compartidas quedan ocultas hasta que lo reactives.',
+    perUserLibrary: 'Cada usuario tiene su propia biblioteca',
+    perUserLibraryHint:
+      'Los usuarios solo ven las canciones que descargaron, más las de las playlists que pueden abrir. Los administradores siguen viéndolo todo. Las canciones que nadie descargó con Downtify (añadidas a mano a la carpeta) solo se muestran entonces a los administradores.',
     searchAlbums: 'Mostrar álbumes en los resultados',
     searchAlbumsHint:
       'Buscar también álbumes, con la opción de descargar el álbum completo.',
@@ -1638,6 +1813,8 @@ export default {
     sourcesTitle: 'De dónde viene el audio',
     sourcesHint:
       'Cada canción prueba las fuentes activadas en este orden hasta que una encuentra coincidencia.',
+    sourcesOwnServersOnly:
+      'Solo están activados tus propios servidores: una canción que no tengan fallará en lugar de venir de YouTube. Vuelve a activar YouTube Music para usarlo como respaldo.',
     moveUp: 'Subir',
     moveDown: 'Bajar',
     sourceSlskd: 'Soulseek (slskd)',
@@ -1649,6 +1826,17 @@ export default {
     sourceSoundcloud: 'SoundCloud',
     sourceSoundcloudHint:
       'Subidas que faltan en otros sitios, y la propia canción de los enlaces de SoundCloud',
+    sourceNeedsTitle: 'Qué necesita cada fuente',
+    sourceNeedsSlskd:
+      'slskd: tu propio servidor slskd, conectado a la red gratuita Soulseek. Sin suscripción; la calidad es lo que comparte la gente, a menudo FLAC o MP3 320.',
+    sourceNeedsDeemix:
+      'Deemix: tu propio servidor Deemix y tu propia cuenta de Deezer. Una cuenta gratuita solo obtiene MP3 128 kbps; MP3 320 y FLAC necesitan un plan de pago de Deezer. Downtify no lo proporciona ni lo evita.',
+    sourceNeedsYoutube:
+      'YouTube Music y YouTube: nada que configurar. El audio es con pérdida (unos 128–160 kbps).',
+    sourceNeedsSoundcloud:
+      'SoundCloud: nada que configurar, sin cuenta. Las transmisiones suelen ser de 128–160 kbps.',
+    sourceNeedsCover:
+      'Sea cual sea la fuente, la portada incrustada es la que Downtify obtiene para la canción (Ajustes → Descargas → Tamaño de portada).',
     deemixTitle: 'Deemix',
     deemixHint:
       'Download from your own Deemix server. Requested quality requires the matching Deezer entitlement.',
@@ -1717,6 +1905,9 @@ export default {
     slskdInPlace: 'Dejar los archivos en la carpeta de slskd',
     slskdInPlaceHint:
       'Activado: etiqueta los archivos en su ubicación y consérvalos. Desactivado: cópialos y etiquétalos en Descargas; elimina el origen solo tras una importación correcta. Si falla, conserva el origen.',
+    slskdKeepCover: 'Conservar la portada del archivo si es más grande',
+    slskdKeepCoverHint:
+      'Los archivos compartidos suelen traer la portada del álbum a tamaño completo. Activado: un archivo de slskd conserva su portada si es más grande que la que obtiene Downtify (Spotify, YouTube Music). Desactivado: la portada obtenida siempre la reemplaza.',
     youtubeTitle: 'YouTube',
     cookies: 'Cookies de YouTube',
     cookiesHint:
@@ -1730,6 +1921,18 @@ export default {
     cookiesLocked: 'Definido por la variable de entorno DOWNTIFY_COOKIES_FILE.',
     cookiesEnvMissing:
       'Ese archivo no existe dentro del contenedor — revisa la ruta y el volumen.',
+    cookiesCheck: 'Comprobar ahora',
+    cookiesChecked: 'comprobado {when}',
+    cookiesStateValid: 'Sesión iniciada',
+    cookiesStateSignedOut: 'Sesión cerrada',
+    cookiesStateNoAccount: 'Sin cuenta',
+    cookiesStateError: 'Error al comprobar',
+    cookiesStateUnknown: 'Aún sin comprobar',
+    cookiesBotCheck: 'verificación de bot {when}',
+    cookiesSignedOutHint:
+      'YouTube ya no acepta estas cookies. Inicia sesión en YouTube en una ventana privada, exporta un nuevo cookies.txt, cierra la ventana y sube el archivo aquí.',
+    cookiesKeepAliveHint:
+      'Downtify mantiene estas cookies con la sesión iniciada renovándolas cada pocos minutos. Expórtalas desde una ventana privada y ciérrala después: una pestaña abierta las rota y cierra la sesión de esta copia.',
     audioGroup: 'Audio',
     format: 'Formato',
     formatHint:
@@ -1741,6 +1944,10 @@ export default {
     bitrateHint: 'Tasa de bits para formatos con pérdida.',
     bitrateLossless: 'No se usa para FLAC, que es sin pérdida.',
     bitrateOriginal: 'No se usa al conservar el formato de audio original.',
+    avoidFormats: 'Formatos a evitar',
+    avoidFormatsHint:
+      'Las descargas nunca traen a tu biblioteca un archivo en estos formatos. slskd los omite y busca otro archivo; una fuente que entregue uno igualmente cuenta como si no hubiera encontrado nada, y se prueba la siguiente. Tu formato de descarga no puede ser uno de ellos.',
+    avoidFormatsLocked: 'Tu formato de descarga no se puede evitar',
     filesGroup: 'Archivos',
     template: 'Nombre de archivo',
     templateHint: 'Usa / para crear carpetas.',
@@ -1754,6 +1961,18 @@ export default {
     overwrite: 'Descargar de nuevo si el archivo existe',
     overwriteHint:
       'Desactívalo para omitir canciones que ya tienes y ahorrar ancho de banda.',
+    completeAlbums: 'Mantener cada álbum completo',
+    completeAlbumsHint:
+      'La vigilancia de artistas descarga una canción de nuevo para cada lanzamiento en el que aparece (un álbum, un grandes éxitos, una edición deluxe) en lugar de enlazar la copia que ya tienes. Ocupa más espacio en disco.',
+    artistWatchDeezer: 'La vigilancia de artistas también lee Deezer',
+    artistWatchDeezerHint:
+      'Añade los lanzamientos que la página del artista en YouTube Music omite. Si se activa más tarde, la siguiente comprobación revisa todos los lanzamientos que lista Deezer; las canciones que ya tienes se enlazan.',
+    artistWatchMusicbrainz: 'La vigilancia de artistas también lee MusicBrainz',
+    artistWatchMusicbrainzHint:
+      'Añade las mixtapes y los lanzamientos antiguos que ni YouTube Music ni Deezer listan. Si se activa más tarde, la siguiente comprobación revisa todos los lanzamientos que añade; la primera comprobación de un artista grande tarda unos minutos.',
+    artistWatchKinds: 'Tipos de lanzamiento de MusicBrainz',
+    artistWatchKindsHint:
+      'Se descargan además de álbumes, EP y sencillos, salvo que una vigilancia elija los suyos en su página.',
     m3u: 'Generar playlists M3U',
     m3uHint:
       'Guarda un .m3u por cada playlist descargada, para Jellyfin, Plex, Navidrome y otros.',
@@ -1777,17 +1996,40 @@ export default {
     isrc: 'Escribir códigos ISRC',
     isrcHint:
       'Guarda el ISRC de cada nueva descarga, el código que identifica una grabación, para reconocer la misma canción aunque tenga otro nombre. Se busca en Deezer; se omite si no es seguro.',
+    acoustid: 'Identificar canciones por su sonido (AcoustID)',
+    acoustidHint:
+      'Permite que Biblioteca → Mejorar biblioteca identifique archivos antiguos por su huella de audio y añada su ISRC cuando la coincidencia es segura. Necesita tu propia clave de API gratuita de AcoustID. Desactivado por defecto.',
+    acoustidKey: 'Clave de API de AcoustID',
+    acoustidKeyHint:
+      'Registra una aplicación en AcoustID (gratis) y pega aquí su clave de API. Se guarda aparte del resto de ajustes y nunca se vuelve a mostrar completa.',
+    acoustidKeyPlaceholder: 'Pega tu clave de API',
+    acoustidBad: 'Eso no parece una clave de API',
+    acoustidSaveKey: 'Guardar clave',
+    acoustidTest: 'Probar clave',
+    acoustidRemoveKey: 'Quitar clave',
+    acoustidKeyWorks: 'AcoustID aceptó la clave.',
+    acoustidSaveFailed: 'No se pudo contactar con el servidor',
+    acoustidToolFpcalc: 'Las huellas se crean con fpcalc.',
+    acoustidToolFfmpeg: 'Las huellas se crean con Chromaprint de FFmpeg.',
+    acoustidToolMissing:
+      'No hay herramienta de huellas: instala fpcalc (Chromaprint) en el servidor.',
     artGroup: 'Portada',
     coverArt: 'Incrustar portada',
     coverArtHint:
       'Desactívalo para archivos más pequeños y descargas más rápidas.',
     coverMin: 'Tamaño mínimo de portada',
     coverMinHint:
-      'Por debajo, se pide a Spotify, iTunes y YouTube Music una portada más grande del mismo lanzamiento y se usa la mayor. Desactivado conserva la portada de la fuente de la pista.',
+      'Sube el objetivo de tamaño de portada de arriba al menos a este valor. Desactivado: el objetivo es solo el tamaño de portada.',
     coverMinOff: 'Desactivado',
+    coverLargest: 'Usar siempre la portada más grande',
+    coverLargestHint:
+      'En cada descarga se pide la portada del lanzamiento a Spotify, iTunes y YouTube Music y se incrusta la más grande (a menudo 1200 px de iTunes). Algo más lento por pista. Desactivado: la portada de la fuente de la pista, salvo que esté por debajo del mínimo.',
     coverSize: 'Tamaño de portada',
     coverSizeHint:
-      'Para portadas de YouTube Music y Deezer. Las de Spotify siempre usan el mayor tamaño disponible.',
+      'El tamaño al que apunta la portada de cada descarga. Una más pequeña – la mayor de Spotify es de 640 px – se sustituye por la mayor que tengan Spotify, iTunes, YouTube Music o Deezer para la misma canción. Las portadas nunca se amplían.',
+    coverSizeRaised:
+      'El tamaño mínimo de portada de abajo lo eleva a {px} px, por eso los tamaños menores aparecen atenuados.',
+    coverSizeRaisedShort: 'Elevado a {px} px por el tamaño mínimo de portada',
     artistCover: 'Obtener fotos de artista automáticamente',
     artistCoverHint:
       'Descarga la foto del artista a .metadata/ArtistImage; también puede usarse en servicios como Navidrome.',
@@ -1811,6 +2053,11 @@ export default {
     lyricsLrclibHint: 'Base comunitaria — letras simples y sincronizadas',
     lyricsNetease: 'NetEase Cloud Music',
     lyricsNeteaseHint: 'Catálogo amplio, normalmente sincronizado',
+    lyricsKugou: 'Kugou Music',
+    lyricsKugouHint: 'Catálogo grande, sincronizadas',
+    lyricsSyncedOnly: 'Solo letras sincronizadas',
+    lyricsSyncedOnlyHint:
+      'Omite las letras sin marcas de tiempo y pregunta al siguiente proveedor. Mejorar biblioteca cuenta entonces como faltantes las pistas con solo letra simple. La letra sincronizada la reemplaza, también en las etiquetas del propio archivo.',
     ratingsGroup: 'Valoraciones de Deezer',
     ratingsHint:
       'Da a tus canciones de Navidrome de 0 a 5 estrellas según su popularidad en Deezer, como dztnr. Las estrellas pertenecen a la cuenta de Navidrome indicada arriba.',
@@ -1843,7 +2090,7 @@ export default {
     ratingsNextSoon: 'Próxima ejecución en la próxima hora',
     ratingsNever: 'Aún no se ha ejecutado',
     ratingsFailedDeezer:
-      'No se pudo conectar con Deezer. Las estrellas ya asignadas se conservan.',
+      'Deezer no respondió durante varios minutos. Las estrellas ya asignadas se conservan y la próxima ejecución sigue donde se detuvo esta.',
     ratingsFailedNavidrome: 'Error de Navidrome: {message}',
     ratingsFailed: 'La valoración falló: {message}',
     ratingsNotConfigured: 'Guarda primero el acceso a Navidrome.',
@@ -1915,6 +2162,12 @@ export default {
     navidromeM3uImport: 'Dejar que Navidrome importe las listas M3U',
     navidromeM3uImportHint:
       'Navidrome convierte cada M3U que escribe Downtify en una lista con su portada. Con esto activado, Downtify no crea una segunda por la API.',
+    discoverNavidromePlays: 'Usar las reproducciones de Navidrome en Descubrir',
+    discoverNavidromePlaysHint:
+      'Lo que esta cuenta de Navidrome reproduce y marca con estrella cuenta en las sugerencias de Descubrir, para los administradores (Navidrome solo informa las reproducciones de la propia cuenta).',
+    navidromeScanWhenIdle: 'Esperar a que nadie escuche para escanear',
+    navidromeScanWhenIdleHint:
+      'Mientras una app de Navidrome está reproduciendo, el escaneo que Downtify inicia tras las descargas espera (se comprueba cada minuto), para no cortar la reproducción. Las canciones nuevas aparecen en Navidrome cuando se detiene.',
     navidromePublic: 'Hacer públicas las playlists de Navidrome',
     primaryLibrary: 'Primary library folder',
     primaryLibraryHint:
@@ -2002,6 +2255,7 @@ export default {
     activity: 'Actividad',
     personalHint:
       'Solo tuyas: siguen a tu cuenta en cualquier navegador y no cambian nada para nadie más.',
+    notifications: 'Notificaciones',
     server: 'Servidor',
     networkGroup: 'Red',
     networkHint: 'Cómo se llega a este servidor. Solo lo ven los admins.',
@@ -2050,6 +2304,91 @@ export default {
     noticeKeptPassword: 'la contraseña que configuraste antes',
     noticeChange: 'Después, cambia la contraseña en Ajustes → General.',
     noticeOk: 'Entendido',
+  },
+  companion: {
+    title: 'Compañero de Spotify',
+    hint: 'Hace que las vigilancias sigan tu propia versión de los mixes personales de Spotify (Daily Mix, Discover Weekly, mixes de ánimo…), no la genérica que Downtify ve sin sesión. El compañero es una extensión del navegador que los lee en un navegador donde tienes la sesión de Spotify iniciada, en tu equipo o en un contenedor de navegador en tu servidor. Tu sesión de Spotify se queda en ese navegador.',
+    enable: 'Leer los mixes personales con el compañero',
+    enableHint:
+      'Mientras esté activado, los mixes personales nunca se leen sin sesión: si el compañero no puede leerlos, esperan.',
+    status: 'Estado',
+    status_off: 'Desactivado',
+    status_never_connected: 'Esperando a la extensión',
+    status_ready: 'Listo',
+    status_signed_out: 'Sesión de Spotify cerrada',
+    status_no_player: 'Sin pestaña de Spotify',
+    status_other_account: 'Otra cuenta',
+    status_away: 'Sin noticias',
+    status_error: 'Algo salió mal',
+    signedInAs: 'Sesión iniciada como {name}',
+    lastSeen: 'último aviso {when}',
+    counts: '{mixes} mixes personales · {due} pendientes · {reads} leídos hoy',
+    readingNow: 'Leyendo {name}…',
+    nextSlot: 'Siguiente franja: {name}, {time}',
+    otherAccount:
+      'El navegador del compañero tiene la sesión de {name}, no de {expected}. Tus vigilancias de mixes personales esperan hasta que vuelvas a iniciar sesión o cambies aquí.',
+    useAccount: 'Leer para {name} en su lugar',
+    slots: 'Franjas horarias',
+    slotsHint:
+      'Los mixes solo se leen dentro de estas franjas, de uno en uno y repartidos por la franja. Plazas es cuántos mixes puede leer una franja.',
+    slotName: 'Nombre',
+    slotNamePlaceholder: 'Franja {n}',
+    start: 'Desde',
+    end: 'Hasta',
+    seats: 'Plazas',
+    days: 'Días',
+    removeSlot: 'Quitar esta franja',
+    addSlot: 'Añadir una franja',
+    seatsUsed: 'Abierta ahora: {used} de {seats} plazas usadas',
+    kind_daily: 'Daily Mixes',
+    kind_weekly: 'Discover Weekly y Release Radar',
+    kind_mixes: 'Otros mixes y radios',
+    problemDays: 'Elige al menos un día.',
+    problemKinds: 'Elige al menos un tipo de mix.',
+    problemTimes: 'El inicio y el fin deben ser distintos.',
+    minGap: 'Pausa mínima entre lecturas',
+    minGapHint: 'Segundos (de 20 a 3600).',
+    awayAlert: 'Avísame tras este tiempo sin noticias',
+    awayAlertHint:
+      'Horas. Llega como notificación «Compañero de Spotify» (Ajustes > Notificaciones), igual que los cierres de sesión, los cambios de cuenta y cuando vuelve.',
+    save: 'Guardar',
+    saved: 'Guardado',
+    download: 'Descargar el compañero',
+    downloadHint:
+      'La extensión del navegador en un ZIP, con la dirección de este servidor y una clave nueva dentro (aparece en Apps vinculadas, donde puedes revocarla). Mantenla en privado. Carga la carpeta descomprimida en Chrome, Brave o Edge (Extensiones > Modo de desarrollador > Cargar descomprimida) o en un contenedor de navegador en tu servidor.',
+    guide: 'Guía de instalación',
+    badgeYours: 'Tu versión',
+    badgeYoursHint:
+      'Un mix de Spotify hecho para un oyente, leído por el compañero de Spotify como tu versión.',
+    badgeHeld: 'En espera',
+    badgeHeldHint:
+      'Un mix de Spotify hecho para un oyente. El compañero de Spotify no puede leerlo ahora, así que espera: ve a Ajustes > Apps > Compañero de Spotify.',
+    agent: 'Configurar con un agente de IA',
+    agentHint:
+      'Instrucciones para que un agente de IA en tu servidor (Hermes, OpenClaw, Claude Code…) instale el compañero en un navegador de allí, un contenedor de navegador o un Chromium sin interfaz, y compruebe que funciona. Incluyen un enlace privado válido durante un día: el agente descarga la extensión con él y ve cómo va. Sigues iniciando sesión en Spotify tú mismo; al agente se le indica que nunca pida tu contraseña.',
+    agentAddress: 'Dirección que usará el navegador',
+    agentAddressHint:
+      'Opcional. Déjalo vacío para usar la dirección de esta página. Desde un contenedor, usa la dirección de red del servidor, no localhost.',
+    agentMake: 'Generar instrucciones',
+    agentReady:
+      'Pega esto en tu agente de IA. Su enlace funciona hasta {time}; mantenlo en privado.',
+    agentCopy: 'Copiar',
+    agentCopied: 'Copiado',
+  },
+  aurral: {
+    title: 'Aurral',
+    hint: 'Deja que Aurral descargue música a través de Downtify. Opcional: nada cambia hasta que lo actives.',
+    enable: 'Dejar que Aurral descargue a través de Downtify',
+    enableHint:
+      'El plugin de Downtify de Aurral podrá buscar aquí y obtener canciones y álbumes. Sus descargas van a una carpeta propia, no a tu biblioteca, y se borran cuando Aurral las tiene.',
+    key: 'Clave para Aurral',
+    keyHint:
+      'Pégala en los ajustes del plugin de Downtify en Aurral, con la dirección de este servidor. Aparece en Apps vinculadas, donde puedes revocarla.',
+    makeKey: 'Crear una clave',
+    plugin: 'El plugin de Aurral',
+    keyOnce: 'Cópiala ahora: no se vuelve a mostrar.',
+    copy: 'Copiar',
+    copied: 'Copiada',
   },
   apps: {
     serverGroup: 'Este servidor',
@@ -2139,6 +2478,134 @@ export default {
       youtube: 'YouTube',
       link: 'Enlace',
     },
+  },
+  backup: {
+    title: 'Copias de seguridad',
+    hint: 'Los ajustes, cada seguimiento con sus opciones y una lista de todas las canciones de la biblioteca (artista, título, álbum, de dónde vino). No los archivos de música: si se pierden, una instalación restaurada sabe qué canciones tenía y las vuelve a descargar.',
+    schedule: 'Copias automáticas',
+    scheduleHint:
+      'Se conservan las {keep} copias más recientes. Una nueva se escribe y se comprueba antes de borrar la más antigua.',
+    every0: 'No',
+    every24: 'Cada día',
+    every72: 'Cada 3 días',
+    every168: 'Cada semana',
+    saved: 'Copias guardadas',
+    savedHint:
+      'Se guardan en la carpeta backups junto a settings.json. Descarga una para tener una copia fuera de este servidor. Contiene tus ajustes tal cual, contraseñas y claves de API incluidas: mantenla en privado.',
+    now: 'Hacer copia ahora',
+    done: 'Copia guardada',
+    failed: 'La última copia falló: {error}',
+    none: 'Aún no hay copias.',
+    counts: 'Seguimientos: {watches} · Canciones: {songs} · {size}',
+    download: 'Descargar',
+    restore: 'Restaurar',
+    fromFile: 'Restaurar un archivo de copia',
+    fromFileHint:
+      'Carga una copia de este u otro Downtify, por ejemplo en una instalación nueva. Los seguimientos que ya existen aquí no se tocan.',
+    part_settings: 'Ajustes',
+    part_watches: 'Seguimientos',
+    part_songs: 'Volver a descargar las canciones que faltan',
+    chooseFile: 'Elegir archivo de copia…',
+    confirmTitle: '¿Restaurar esta copia?',
+    confirmBody:
+      'Se recuperará: {parts}. Tus ajustes actuales se sustituyen por los de la copia.',
+    restored: 'Copia restaurada',
+    resultSettings: 'Ajustes restaurados',
+    resultWatches: '{added} seguimientos añadidos, {present} ya estaban',
+    resultSongs: 'Faltan {missing} canciones, {queued} en cola para descargar',
+    resultNoSongs: 'No faltaba ninguna canción',
+  },
+  notify: {
+    title: 'Notificaciones',
+    hint: 'Mensajes sobre tareas largas y descargas, enviados a Discord, ntfy, Gotify o un webhook. Desactivado hasta que lo actives. Los mensajes están en inglés.',
+    enabled: 'Enviar notificaciones',
+    enabledHint:
+      'El interruptor principal. Cada canal de abajo tiene además el suyo.',
+    progressEvery: 'Progreso',
+    progressEveryHint:
+      'Cada cuánto se actualiza el progreso de una tarea en curso. En Discord se edita un mensaje por tarea; los demás canales reciben una línea en cada cuarto.',
+    channel_discord: 'Discord',
+    channel_discordHint:
+      'Un webhook publica en un canal. Un bot también publica y responde a comandos como /status.',
+    channel_ntfy: 'ntfy',
+    channel_ntfyHint:
+      'Notificaciones push a la app ntfy, en ntfy.sh o tu propio servidor.',
+    channel_gotify: 'Gotify',
+    channel_gotifyHint: 'Notificaciones push a tu servidor Gotify.',
+    channel_webhook: 'Webhook',
+    channel_webhookHint:
+      'Un POST JSON a cualquier dirección. Una dirección /notify de Apprise API funciona tal cual.',
+    channelOn: 'Usar este canal',
+    discordMode: 'Cómo se conecta Downtify',
+    discordModeHint:
+      'Webhook: solo enviar. Bot: enviar y responder comandos; necesita un bot del Discord Developer Portal invitado a tu servidor.',
+    modeWebhook: 'Webhook (solo enviar)',
+    modeBot: 'Bot (enviar + comandos)',
+    webhookUrl: 'URL del webhook',
+    webhookUrlHint:
+      'Discord: ajustes del canal → Integraciones → Webhooks → Copiar URL del webhook. Se guarda en el servidor; no se vuelve a mostrar.',
+    botToken: 'Token del bot',
+    botTokenHint:
+      'Discord Developer Portal → tu aplicación → Bot → Reset token. Se guarda en el servidor; no se vuelve a mostrar.',
+    channelId: 'ID del canal',
+    channelIdHint:
+      'Dónde publica y responde el bot. En Discord, activa el modo desarrollador y haz clic derecho en el canal → Copiar ID del canal.',
+    commands: 'Responder comandos',
+    commandsHint:
+      'Los comandos solo leen: nadie en Discord puede iniciar, detener ni cambiar nada en Downtify.',
+    allowedUsers: 'Usuarios permitidos',
+    allowedUsersHint:
+      'IDs de usuarios de Discord que pueden usar los comandos, separados por espacios. Vacío: todos en el canal.',
+    botState: 'Bot',
+    bot_off: 'Apagado',
+    bot_connecting: 'Conectando…',
+    bot_connected: 'Conectado',
+    bot_error: 'Detenido',
+    invite: 'Invitar el bot a tu servidor',
+    commandList: 'Comandos que puedes enviar en el canal:',
+    server: 'Servidor',
+    topic: 'Tema',
+    topicHint:
+      'En un servidor público, quien conozca el tema puede leerlo: elige algo difícil de adivinar.',
+    accessToken: 'Token de acceso',
+    optional: 'Opcional.',
+    appToken: 'Token de la app',
+    appTokenHint:
+      'Gotify → Apps → Create application. Se guarda en el servidor; no se vuelve a mostrar.',
+    genericHint:
+      'Se guarda en el servidor; no se vuelve a mostrar. El cuerpo tiene title, body, type, event y fields.',
+    what: 'Qué enviar',
+    whatHint: 'Elige las tareas, en qué momentos, y los demás eventos.',
+    group_tasks: 'Tareas',
+    group_phases: 'Cuándo',
+    group_events: 'Otros eventos',
+    task_doctor: 'Doctor',
+    task_upgrade: 'Mejora de la biblioteca (portadas, letras, etiquetas)',
+    task_ratings: 'Valoraciones con estrellas',
+    task_wanted: 'Recuperar lo buscado',
+    task_backup: 'Copias de seguridad',
+    phase_start: 'Iniciada',
+    phase_progress: 'Progreso',
+    phase_finish: 'Terminada',
+    phase_fail: 'Fallida',
+    event_download_failed: 'Descarga fallida',
+    event_download_done: 'Canciones descargadas',
+    event_new_releases: 'Nuevos lanzamientos encontrados',
+    event_watch_done: 'Descargas de seguimientos',
+    event_spotify_companion:
+      'Compañero de Spotify: sesión cerrada, otra cuenta, sin noticias o de vuelta',
+    test: 'Prueba',
+    testHint:
+      'Envía un mensaje ahora con lo que está rellenado arriba, guardado o no.',
+    sendTest: 'Enviar prueba',
+    testSent: 'Mensaje de prueba enviado',
+    testFailed: 'La prueba falló: {error}',
+    lastError: 'El último mensaje falló: {error}',
+    secretSaved: 'Guardado (escribe para reemplazar)',
+    remove: 'Quitar',
+    save: 'Guardar notificaciones',
+    saved: 'Notificaciones guardadas',
+    unsaved: 'Cambios sin guardar',
   },
   port: {
     label: 'Puerto',
@@ -2285,6 +2752,7 @@ export default {
       delete: 'Archivos eliminados',
       audio_replaced: 'Audios reemplazados',
       album_compilation: 'Recopilaciones marcadas',
+      lyrics_offset: 'Sincronía de letras ajustada',
       library_hidden: 'Elementos ocultos a los usuarios',
       library_shown: 'Elementos mostrados a los usuarios',
       device_paired: 'Apps vinculadas',
@@ -2307,6 +2775,7 @@ export default {
       audio_replaced: 'reemplazó el audio de {what}',
       album_compilation:
         'cambió si {what} es una recopilación de Varios artistas',
+      lyrics_offset: 'ajustó la sincronía de la letra de {what}',
       library_hidden: 'ocultó {what} a los usuarios',
       library_shown: 'mostró {what} a los usuarios',
       device_paired: 'vinculó {what}',
@@ -2495,6 +2964,45 @@ export default {
     from: 'Descargado desde {source}',
   },
   doctor: {
+    formatsTitle: 'Formatos a convertir',
+    formatsHint:
+      'Archivos de la biblioteca en formatos que no quieres, como FLAC de antes de fijar tus reglas de formato. Cada uno pasa a ser un MP3 con tu calidad de descarga que se queda con sus listas, me gusta y seguimientos, como al unir duplicados.',
+    formatsPick: 'Formatos',
+    formatsPickHint:
+      'Elige los formatos a buscar. Un formato sin pérdida (FLAC, WAV, AIFF, APE, WavPack) convertido a MP3 320 suena igual; uno con pérdida (M4A, OGG, Opus) convertido de nuevo pierde un poco.',
+    formatsFind: 'Buscar archivos',
+    formatsNone: 'No hay archivos {formats} en la biblioteca.',
+    formatsFound: 'Archivos en {formats}: {count}, {size} en total.',
+    formatsEstimate:
+      'Como MP3 {bitrate}k: unos {size}, ahorrando unos {saved}.',
+    formatsDuplicatesFirst:
+      'Une primero las canciones duplicadas, para que cada canción se convierta una sola vez.',
+    formatsListLabel: 'Archivos a convertir',
+    formatsAbout: 'unos {size}',
+    formatsConvert: 'Convertir a MP3 {bitrate}k ({count})',
+    formatsConvertTitle: '¿Convertir estos archivos?',
+    formatsConvertBody:
+      'Archivos a convertir: {count}. Cada uno pasa a ser un MP3 a {bitrate}k con las mismas etiquetas, portada y letra, se queda con sus listas, me gusta y seguimientos, y el original va {where}. Puede tardar; puedes detenerlo entre archivos.',
+    formatsConvertConfirm: 'Convertir',
+    formatsConverted: 'Convertidos: {count}. Ahorrado: {saved}.',
+    formatsStopped: 'Detenido. Sin cambios: {count}.',
+    formatsInTrash:
+      'Los originales están en la papelera de música durante 30 días.',
+    formatsDeleted: 'Los originales se eliminaron.',
+    formatsFailed: 'No se pudieron convertir, sin cambios: {count}',
+    convertError: {
+      missing: 'el archivo ya no está',
+      convert_failed: 'ffmpeg no pudo leerlo',
+      convert_length: 'el MP3 salió con otra duración',
+      convert_exists: 'ya hay un MP3 con ese nombre',
+      convert_no_ffmpeg: 'ffmpeg no está instalado',
+      convert_trash: 'la papelera de música no cubre su carpeta',
+      convert_remove: 'no se pudo quitar el original, se conservan ambos',
+      dedupe_missing: 'el archivo ya no está',
+      dedupe_invalid: 'no es un archivo de la biblioteca',
+      dedupe_replacement_pending:
+        'Reemplazar audio todavía está trabajando en él',
+    },
     title: 'Doctor',
     intro:
       'Las versiones nuevas de Downtify corrigen problemas a partir de entonces, pero los archivos y listas que escribió una versión antigua siguen igual. El Doctor encuentra esos restos y repara lo que puede demostrar que es seguro.',
@@ -2505,6 +3013,8 @@ export default {
     runCheckup: 'Revisar ahora',
     stop: 'Detener',
     step: {
+      convert: 'Convirtiendo archivos…',
+      convert_publish: 'Actualizando la biblioteca…',
       starting: 'Empezando…',
       library: 'Leyendo la biblioteca…',
       playlists: 'Leyendo las listas…',
@@ -2566,10 +3076,160 @@ export default {
       name: 'Mismo nombre',
       songs: 'Mismas canciones',
       manual: 'Elegidas por ti',
+      assistant: 'Elegido por el asistente',
     },
     songsCount: 'Canciones: {count}',
     hasCover: 'Tiene portada',
     keeps: 'Se conserva',
+    ai: {
+      title: 'Asistente de IA',
+      hint: 'Deja que un asistente de IA como Claude revise contigo lo que encontró el Doctor. Dile con palabras sencillas lo que quieres: explica cada grupo y sugiere qué hacer, y tú decides.',
+      helper: 'Asistente de IA',
+      offHint:
+        'Apagado. Inícialo cuando quieras ayuda. Se detiene solo tras 2 horas sin uso y cuando Downtify se reinicia.',
+      connected:
+        'Encendido · {client} está conectado · se detiene tras {minutes} min sin uso',
+      waitingForAi:
+        'Encendido · esperando a que se conecte un asistente · se detiene tras {minutes} min sin uso',
+      start: 'Iniciar asistente de IA',
+      stop: 'Detener',
+      on: 'Encendido',
+      waitingBadge: '{count} por revisar',
+      whoTitle: 'Qué apps de IA pueden conectarse',
+      whoCode:
+        'Claude Code (en una terminal o en la app de escritorio de Claude) en un ordenador que llegue a este servidor, en tu red de casa o por Tailscale.',
+      whoDesktop:
+        'Claude Desktop, a través de un pequeño puente (necesita Node.js en ese ordenador).',
+      whoWeb:
+        'Claude en la web o el móvil: solo si este servidor es accesible desde internet por HTTPS (por ejemplo con Tailscale Funnel o Cloudflare Tunnel).',
+      whoChatgpt:
+        'ChatGPT: necesita su modo desarrollador (no en todos los planes) y el mismo acceso a internet.',
+      scope:
+        'Funciona en todas las secciones del Doctor: listas duplicadas, canciones duplicadas (también remixes y otras versiones que la revisión no agrupa), canciones descargadas otra vez con un nuevo ID de Spotify, restos de slskd y Navidrome. Mira y sugiere; nada cambia hasta que se aplica una sugerencia.',
+      connectTitle: 'Conecta tu asistente',
+      clientCode: 'Claude Code',
+      clientDesktop: 'Claude Desktop',
+      clientOther: 'Otras apps',
+      codeHint:
+        'Ejecuta esto una vez en una terminal, luego abre Claude Code y pega el primer mensaje de abajo.',
+      desktopHint:
+        'Añade esto a claude_desktop_config.json (Configuración › Desarrollador › Editar configuración), guarda y reinicia Claude Desktop.',
+      otherHint:
+        'Cualquier app que hable MCP por HTTP: dale esta dirección y esta cabecera.',
+      keyHint:
+        'La clave cambia cada vez que inicias el asistente y deja de funcionar al detenerlo. No la compartas: mientras el asistente funcione, quien la tenga puede cambiar tus listas.',
+      copy: 'Copiar',
+      copied: 'Copiado',
+      copyFailed: 'No se pudo copiar. Selecciona el texto y cópialo a mano.',
+      firstTitle: 'Primer mensaje para tu asistente',
+      firstHint:
+        'Pega esto para empezar y luego di lo que quieres con tus palabras.',
+      firstMessage:
+        'Usa las herramientas de downtify-doctor para ayudarme a ordenar mi biblioteca de Downtify. Empieza con get_overview (haz una revisión si es antigua) y luego dime con palabras sencillas qué encontró el Doctor en cada sección. Ve sección por sección: de cada hallazgo, explica qué contiene, qué cambia y qué recomiendas. No apliques nada: haz sugerencias para que las revise en Downtify.',
+      canApply: 'Dejar que el asistente aplique lo que aceptes en el chat',
+      canApplyHint:
+        'Apagado: pulsas Aplicar aquí. Encendido: cuando digas que sí en el chat, el asistente puede aplicar esas sugerencias él mismo. Se apaga de nuevo cada vez que se inicia el asistente.',
+      suggestionsTitle: 'Sugerencias del asistente',
+      none: 'Aún no hay sugerencias.',
+      decisionMerge: 'Unir',
+      decisionApart: 'Listas distintas',
+      why: 'Por qué:',
+      apply: 'Aplicar',
+      dismiss: 'Descartar',
+      applyAll: 'Aplicar todas ({count})',
+      clear: 'Quitar las terminadas',
+      state: {
+        queued: 'En cola',
+        waiting: 'Esperándote',
+        applying: 'Aplicando…',
+        applied: 'Hecho',
+        failed: 'Falló',
+      },
+      decisionKeep: 'Conservar una copia',
+      decisionSongsApart: 'Canciones distintas',
+      decisionClean: 'Borrar restos',
+      decisionNavidrome: 'Ordenar Navidrome',
+      songsTrash:
+        'Las otras copias van a la papelera de música, donde se pueden recuperar durante 30 días. Antes, sus listas, me gusta y seguimientos pasan a la copia conservada.',
+      songsForGood:
+        'La papelera de música está apagada: las otras copias se borran para siempre. Antes, sus listas, me gusta y seguimientos pasan a la copia conservada.',
+      slskdSummary:
+        '{count} archivos · {size}, cada uno con el mismo audio que un archivo de la biblioteca',
+      andMore: 'y {count} más',
+      ndRemoved: 'Se borra',
+      ndImport:
+        'También activa «Dejar que Navidrome importe las listas M3U», para que Downtify deje de crear una segunda copia.',
+      lockedHint:
+        'Una reparación cambió esta sección. Vuelve a hacer la revisión antes de aplicar estas.',
+      section: {
+        playlists: 'Listas duplicadas',
+        songs: 'Canciones duplicadas',
+        slskd: 'Restos de slskd',
+        navidrome: 'Navidrome',
+      },
+      ndKind: {
+        import: 'Importada de un M3U',
+        downtify: 'Copia de Downtify',
+        other: 'Otra',
+      },
+    },
+    outOfDate: 'Desactualizado',
+    staleHint:
+      'Una reparación en otra sección puede haber cambiado lo encontrado aquí. Vuelve a comprobar antes de cambiar algo aquí.',
+    checkAgain: 'Comprobar de nuevo',
+    coverOf: 'Portada de {name}',
+    noCover: 'Sin portada',
+    decideMerge: 'Unir',
+    decideApart: 'Listas distintas',
+    decideHint: 'Elige para cada grupo y luego aplícalo todo de una vez.',
+    kindLabel: 'Mostrar',
+    kindAll: 'Todos',
+    applyCounts: '{merge} para unir · {apart} separados',
+    applyChanges: 'Aplicar cambios',
+    clearChoices: 'Borrar elección',
+    applyTitle: '¿Aplicar estos cambios?',
+    applyBody:
+      'Unir {merge} grupos y mantener {apart} separados. Antes se guarda una copia de los M3U originales, y Navidrome se vuelve a escanear una sola vez al final.',
+    appliedMerged: '{count} grupos unidos.',
+    appliedApart: '{count} grupos quedan separados y no se volverán a mostrar.',
+    appliedFailed: 'No se pudieron unir: {names}',
+    playlistsKeptApart:
+      '{count} grupos que marcaste como listas distintas no se muestran',
+    folder: {
+      title: 'Qué hay en la carpeta de slskd',
+      total: '{files} archivos · {size}',
+      files: '{count} archivos',
+      library: 'Canciones de la biblioteca',
+      libraryHint:
+        'Lo que la página de almacenamiento cuenta como canciones de slskd.',
+      leftover: 'Restos',
+      leftoverHint:
+        'Copias que la comprobación de slskd de arriba compara con la biblioteca.',
+      unlisted_audio: 'Audio que Downtify no conoce',
+      unlisted_audioHint:
+        'Nunca importado, o conservado tras una importación fallida. No está en la biblioteca ni se cuenta en ningún otro lugar.',
+      other: 'Otros archivos',
+      otherHint: 'Portadas, letras y todo lo que no es una canción.',
+      otherKinds: 'Otros archivos por tipo:',
+      unlisted_audioList:
+        'Archivos de audio más grandes que Downtify no conoce',
+      otherList: 'Otros archivos más grandes',
+      units:
+        'Los tamaños cuentan 1 GB como 1024³ bytes; algunos exploradores de archivos cuentan 1000³, así que la misma carpeta puede verse más grande allí.',
+    },
+    badge: {
+      toConvert: '{count} · {size}',
+      notChecked: 'Sin comprobar',
+      allGood: 'Todo bien',
+      toDelete: '{count} para borrar',
+      leftovers: 'Sobran {size}',
+      off: 'Desactivado',
+      unreachable: 'Sin conexión',
+      toFix: '{count} para arreglar',
+      toMerge: '{count} para unir',
+      toReview: '{count} para revisar',
+      songsFound: '{count} canciones',
+    },
     mergePlan:
       'Resultado: {songs} canciones. Comparten el {overlap}% de las canciones.',
     mergeUnsafe:
@@ -2662,7 +3322,15 @@ export default {
     relinkedLabel: 'Misma canción, varios ID',
     relinkedCounts: 'Canciones: {songs} · archivos de más: {extra}',
     error: {
+      formats_none: 'Elige al menos un formato.',
+      convert_no_ffmpeg:
+        'ffmpeg no está instalado en el servidor, así que no se puede convertir nada.',
+      ai_not_running: 'El asistente de IA está apagado. Inícialo primero.',
       doctor_busy: 'El Doctor ya está trabajando.',
+      rescan_first:
+        'Una reparación en otra parte cambió esta sección. Compruébala de nuevo primero.',
+      m3u_twice:
+        'Una lista está en dos de los grupos para unir. Vuelve a hacer la comprobación.',
       doctor_failed:
         'El Doctor se detuvo por un error. Mira el registro del servidor.',
       queue_busy:
@@ -2685,6 +3353,153 @@ export default {
       doctor_not_ready:
         'Downtify todavía se está iniciando. Inténtalo de nuevo en un momento.',
       navidrome_off: 'Navidrome no está configurado.',
+    },
+  },
+  quota: {
+    title: 'Almacenamiento',
+    used: '{used} de {limit} usados',
+    usedUnlimited: '{used} descargados',
+    left: '{left} libres',
+    unlimited: 'Sin límite',
+    full: 'Te quedaste sin espacio: las descargas nuevas se rechazan hasta que borres algunas de tus descargas o un admin te dé más.',
+    fullBadge: 'Sin espacio',
+    groupTitle: 'Cuotas de almacenamiento',
+    groupHint:
+      'Cuánto puede descargar cada usuario. Los admins nunca tienen límite. Una canción que descargaron dos usuarios cuenta para ambos.',
+    defaultLabel: 'Cuota predeterminada',
+    defaultHint:
+      'Para cada usuario sin cuota propia. Déjalo vacío para no poner límite.',
+    quotaLabel: 'Cuota de almacenamiento',
+    modeDefault: 'Predeterminada',
+    modeUnlimited: 'Ilimitada',
+    modeCustom: 'Personalizada',
+    modeDefaultHint: 'Sigue la cuota predeterminada ({limit}).',
+    modeDefaultNone: 'Sigue la predeterminada: sin límite.',
+    modeUnlimitedHint: 'Sin límite para este usuario.',
+    modeCustomHint: 'Una cuota propia, en GB.',
+    adminHint: 'Los admins nunca tienen límite.',
+    usageOf: 'cuota {used} de {limit}',
+    resetUsage: 'Reiniciar uso',
+    resetTitle: '¿Reiniciar el uso de {name}?',
+    resetBody:
+      'Olvida qué canciones descargó, así su uso vuelve a cero. No se borra ningún archivo, pero ya no podrá borrar esas canciones como quien las descargó.',
+    resetDone: 'Uso reiniciado',
+    invalid: 'Escribe un tamaño en GB mayor que 0',
+  },
+  lowBitrate: {
+    title: 'Informe de bitrate bajo',
+    subtitle:
+      'Archivos por debajo de un bitrate y copias mejores de Soulseek para reemplazarlos.',
+    backToUpgrade: 'Mejorar biblioteca',
+    adminOnly: 'Solo los administradores pueden ver esto',
+    howItWorks:
+      'Nada cambia hasta que apruebes una copia. Buscar consulta Soulseek (slskd) y no escribe nada. Reemplazar descarga la copia elegida, le da las etiquetas, la portada y la letra del archivo antiguo, le pasa todas las playlists, me gusta y valoraciones, y lleva el archivo antiguo a la papelera de música, desde donde puedes restaurarlo.',
+    slskdOff:
+      'Soulseek (slskd) no está configurado, así que no se pueden encontrar copias mejores. Actívalo en Ajustes → Fuentes.',
+    trashOff:
+      'La papelera de música está desactivada en este servidor. Reemplazar la necesita, para que cada reemplazo se pueda deshacer.',
+    threshold: 'Listar archivos',
+    under: 'Por debajo de {kbps} kbps',
+    includeLossless: 'Ofrecer también sin pérdida (FLAC)',
+    includeLosslessHint:
+      'Desactivado: solo copias con pérdida (primero MP3 320, desde 256 kbps). Se aplica a la próxima búsqueda.',
+    selectShown: 'Seleccionar todo lo mostrado',
+    findSelected: {
+      one: 'Buscar copias mejores ({count})',
+      other: 'Buscar copias mejores ({count})',
+    },
+    replaceSelected: {
+      one: 'Reemplazar {count} archivo',
+      other: 'Reemplazar {count} archivos',
+    },
+    summary: {
+      one: '{count} archivo por debajo de {kbps} kbps · {size}',
+      other: '{count} archivos por debajo de {kbps} kbps · {size}',
+    },
+    empty: 'Ningún archivo por debajo de {kbps} kbps',
+    emptyHint:
+      'Todos los archivos con pérdida de la biblioteca están en este bitrate o por encima.',
+    select: 'Seleccionar «{title}»',
+    kbps: '{kbps} kbps',
+    sources: {
+      youtube: 'De YouTube',
+      'youtube-music': 'De YouTube Music',
+      soundcloud: 'De SoundCloud',
+      slskd: 'De Soulseek',
+      deemix: 'De Deemix',
+      folder: 'De una carpeta de música',
+    },
+    states: {
+      queued: 'En espera',
+      downloading: 'Descargando',
+      replacing: 'Reemplazando',
+      done: 'Reemplazado',
+      error: 'Falló',
+    },
+    searching: 'Buscando…',
+    searchAgain: 'Buscar de nuevo',
+    find: 'Buscar',
+    replace: 'Reemplazar',
+    noneFound: 'Ahora mismo no hay una copia mejor en Soulseek.',
+    candidatesFor: 'Copias de «{title}»',
+    quality: '{kbps} kbps {format}',
+    qualityVbr: 'VBR ~{kbps} kbps {format}',
+    noBitrate: '{format}, bitrate no indicado',
+    best: 'Mejor',
+    peer: 'de {name}',
+    queued: {
+      one: '{count} en su cola',
+      other: '{count} en su cola',
+    },
+    showMore: {
+      one: 'Mostrar {count} más',
+      other: 'Mostrar {count} más',
+    },
+    finishedTitle: 'Terminados',
+    finishedHint:
+      'Los archivos antiguos están en la papelera de música. Restaura uno allí para deshacer su reemplazo.',
+    replacedWith: '{before} → {after} kbps · ahora {file}',
+    openTrash: 'Abrir la papelera',
+    clearFinished: 'Vaciar esta lista',
+    confirmTitle: {
+      one: '¿Reemplazar {count} archivo?',
+      other: '¿Reemplazar {count} archivos?',
+    },
+    confirmBody:
+      'Cada archivo se reemplaza por la copia que elegiste. El archivo antiguo va a la papelera de música, así que puedes restaurarlo.',
+    refused: {
+      one: '{count} archivo no se inició: {reason}',
+      other: '{count} archivos no se iniciaron: {reason}',
+    },
+    panelTitle: 'Informe de bitrate bajo',
+    panelHint:
+      'Lista los archivos por debajo de 256 kbps y reemplázalos por copias mejores de Soulseek, una aprobación cada vez.',
+    open: 'Abrir el informe',
+    errors: {
+      slskd_off: 'Soulseek (slskd) está desactivado o sin configurar.',
+      slskd_unreachable: 'Soulseek (slskd) no respondió.',
+      no_tags: 'El archivo no tiene título ni artista que buscar.',
+      search_failed: 'La búsqueda falló.',
+      search_again: 'Busca de nuevo: ese resultado ya no se conoce.',
+      missing: 'El archivo ya no está en la biblioteca.',
+      already_running: 'Este archivo ya se está reemplazando.',
+      trash_off: 'La papelera de música está desactivada.',
+      trash_refused:
+        'La papelera de música no puede aceptar este archivo (necesita título, artista y álbum, o un ID).',
+      enqueue_failed: 'El par rechazó la descarga.',
+      transfer_failed: 'La descarga no llegó completa.',
+      tag_mismatch: 'El archivo descargado es otra canción.',
+      unreadable: 'El archivo descargado no es audio legible.',
+      length_mismatch: 'El archivo descargado tiene otra duración.',
+      not_better: 'El archivo descargado no es mejor que el que tienes.',
+      target_exists: 'Ya existe un archivo con el nuevo nombre.',
+      write_failed: 'No se pudo escribir la nueva copia.',
+      cancelled: 'Quitado de la cola.',
+      dedupe_replacement_pending:
+        'Otro reemplazo de este archivo no ha terminado.',
+      dedupe_missing: 'Falta un archivo del reemplazo.',
+      dedupe_invalid: 'El reemplazo no es válido.',
+      failed: 'Algo salió mal.',
     },
   },
 }

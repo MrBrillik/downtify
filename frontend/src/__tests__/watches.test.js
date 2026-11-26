@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
   RELEASE_TYPES,
+  artistNameQuery,
+  nameFromSpotifyUser,
+  spotifyUserOf,
   countWatches,
   filterWatches,
   releaseFilterSummary,
   sortWatches,
   toggleReleaseType,
+  watchCoverUrl,
   watchKind,
   watchKindOfUrl,
   watchReleaseTypes,
@@ -62,6 +66,18 @@ describe('watchKindOfUrl', () => {
     ['https://open.spotify.com/artist/0TnOYISbd1XYRBk9myaseg', 'artist'],
     ['https://music.youtube.com/channel/UCabcdef', 'artist'],
     ['https://music.youtube.com/@anitta', 'artist'],
+    [
+      'https://musicbrainz.org/artist/86db4b7b-0081-4857-bf45-32f46cba2fe4',
+      'artist',
+    ],
+    [
+      'musicbrainz.org/artist/86db4b7b-0081-4857-bf45-32f46cba2fe4/releases',
+      'artist',
+    ],
+    [
+      'https://musicbrainz.org/release-group/86db4b7b-0081-4857-bf45-32f46cba2fe4',
+      null,
+    ],
     ['https://open.spotify.com/album/4aawyAB9vmqN3uQ7FjRGTy', null],
     ['https://music.youtube.com/playlist?list=OLAK5uy_album', null],
     ['https://example.com/x', null],
@@ -172,5 +188,57 @@ describe('artist release filters', () => {
       types: [],
       newOnly: false,
     })
+  })
+})
+
+describe('Spotify user links and typed artist names', () => {
+  it('spots a Spotify user link, not an artist link', () => {
+    expect(spotifyUserOf('https://open.spotify.com/user/drake')).toBe('drake')
+    expect(
+      spotifyUserOf('https://open.spotify.com/intl-de/user/drake?si=x')
+    ).toBe('drake')
+    expect(spotifyUserOf('spotify:user:drake')).toBe('drake')
+    expect(
+      spotifyUserOf('https://open.spotify.com/artist/3TVXtAsR1Inumwj472S9r4')
+    ).toBe('')
+    expect(watchKindOfUrl('https://open.spotify.com/user/drake')).toBe(null)
+  })
+
+  it('searches a typed name, never a link', () => {
+    expect(artistNameQuery('Drake')).toBe('Drake')
+    expect(artistNameQuery('  A.R. Rahman ')).toBe('A.R. Rahman')
+    expect(artistNameQuery('D')).toBe('')
+    expect(artistNameQuery('https://open.spotify.com/artist/abc')).toBe('')
+    expect(artistNameQuery('open.spotify.com/user/drake')).toBe('')
+    expect(artistNameQuery('music.youtube.com/channel/UCabc')).toBe('')
+    expect(artistNameQuery('spotify:artist:abc')).toBe('')
+  })
+
+  it('turns a readable user handle into a name to search', () => {
+    expect(nameFromSpotifyUser('drake')).toBe('drake')
+    expect(nameFromSpotifyUser('the_weeknd')).toBe('the weeknd')
+    expect(nameFromSpotifyUser('31l3kq7xqz2ab4c5d6e7f8g9h0')).toBe('')
+  })
+})
+
+describe('watchCoverUrl', () => {
+  it('asks the server for a playlist watch, versioned by its last check', () => {
+    expect(
+      watchCoverUrl({
+        id: 7,
+        kind: 'playlist',
+        last_checked: '2026-11-21T10:00:00',
+      })
+    ).toBe('/api/monitor/playlists/7/cover?v=2026-11-21T10%3A00%3A00')
+  })
+
+  it('treats a row with no kind as a playlist, and works before any check', () => {
+    expect(watchCoverUrl({ id: 3 })).toBe('/api/monitor/playlists/3/cover')
+  })
+
+  it('leaves artists (their photo) and rows without an id alone', () => {
+    expect(watchCoverUrl({ id: 2, kind: 'artist' })).toBe('')
+    expect(watchCoverUrl({ kind: 'playlist' })).toBe('')
+    expect(watchCoverUrl(null)).toBe('')
   })
 })

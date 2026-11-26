@@ -34,6 +34,7 @@ from downtify import (
     auth_routes,
     download_policy_routes,
     mobile_routes,
+    notification_routes,
     trash_routes,
     wanted_routes,
 )
@@ -589,6 +590,7 @@ def test_the_signing_key_is_private_and_kept(tmp_path):
         ('GET', '/api/settings', ADMIN),
         ('GET', '/api/fs/dirs', ADMIN),
         ('POST', '/api/cookies', ADMIN),
+        ('POST', '/api/cookies/check', ADMIN),
         ('POST', '/api/proxy/test', ADMIN),
         ('DELETE', '/delete', USER),
         ('DELETE', '/delete/batch', USER),
@@ -686,6 +688,7 @@ def _all_routes(app: FastAPI):
     yield from trash_routes.router.routes
     yield from download_policy_routes.router.routes
     yield from wanted_routes.router.routes
+    yield from notification_routes.router.routes
 
 
 def _templates(app: FastAPI):
@@ -1200,6 +1203,7 @@ def test_server_info_is_public_and_says_little(client):
     assert info['require_sign_in'] is True
     assert info['capabilities']['password_sign_in'] is True
     assert info['capabilities']['playlist_editing'] is True
+    assert info['capabilities']['playlist_delete'] is True
 
 
 def test_renaming_the_server(client):

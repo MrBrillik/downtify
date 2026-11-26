@@ -339,6 +339,21 @@ def _resolve(url):
     return asyncio.run(api._resolve_watch_target(url))
 
 
+@pytest.mark.parametrize(
+    'url',
+    [
+        'https://open.spotify.com/user/drake',
+        'https://open.spotify.com/intl-de/user/drake?si=1',
+        'spotify:user:drake',
+    ],
+)
+def test_resolve_explains_a_spotify_user_link(url):
+    with pytest.raises(api.HTTPException) as err:
+        _resolve(url)
+    assert err.value.status_code == 400
+    assert 'user link' in err.value.detail
+
+
 def test_resolve_spotify_artist_url_maps_to_youtube_channel(monkeypatch):
     monkeypatch.setattr(
         api.spotify, 'artist_name_from_id', lambda artist_id: 'Test Artist'
@@ -361,6 +376,10 @@ def test_resolve_spotify_artist_url_maps_to_youtube_channel(monkeypatch):
 
 
 def test_resolve_spotify_artist_does_not_guess_first_result(monkeypatch):
+    # Nor does MusicBrainz link the Spotify page to anyone.
+    monkeypatch.setattr(
+        api.musicbrainz, 'artist_id_for_spotify', lambda _id: ''
+    )
     monkeypatch.setattr(
         api.spotify, 'artist_name_from_id', lambda artist_id: 'Test Artist'
     )
@@ -412,6 +431,10 @@ def test_resolve_spotify_artist_ignores_case_and_slashes(monkeypatch):
 
 
 def test_resolve_spotify_artist_with_no_match_is_404(monkeypatch):
+    # Nor does MusicBrainz link the Spotify page to anyone.
+    monkeypatch.setattr(
+        api.musicbrainz, 'artist_id_for_spotify', lambda _id: ''
+    )
     monkeypatch.setattr(
         api.spotify, 'artist_name_from_id', lambda artist_id: 'Nobody'
     )

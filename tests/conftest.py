@@ -5,7 +5,9 @@ import uuid
 
 import psycopg
 import pytest
+import requests
 
+from downtify import cookie_refresh, slskd_provider
 from downtify import downloader as downloader_mod
 from downtify.db.core import Database
 from downtify.db.migrations.runner import run_migrations
@@ -23,6 +25,38 @@ def _offline_metadata_lookups(monkeypatch):
     monkeypatch.setattr(downloader_mod, '_fetch_itunes_genre', lambda s: '')
     monkeypatch.setattr(downloader_mod, '_download_cover', lambda url: None)
     monkeypatch.setattr(downloader_mod.isrc_mod, 'lookup', lambda song: None)
+    # Every download below the cover size goal asks the cover sources for
+    # a larger cover (downloader.cover_goal).
+    monkeypatch.setattr(
+        downloader_mod.cover_sources, '_source_url', lambda *a, **k: ''
+    )
+
+
+@pytest.fixture(autouse=True)
+def _no_remembered_slskd_failures():
+    """slskd candidates that failed are remembered process-wide
+    (``slskd_provider.remember_failure``): each test starts with none."""
+
+    slskd_provider.forget_failures()
+    yield
+    slskd_provider.forget_failures()
+
+
+@pytest.fixture(autouse=True)
+def _offline_cookie_keepalive(monkeypatch):
+    """An uploaded cookies.txt starts a keep-alive pass in the background
+    (``downtify/cookie_refresh.py``); without this it would call YouTube.
+    Tests of the keep-alive install their own fake session."""
+
+    def _refuse(*_args, **_kwargs):
+        raise requests.ConnectionError('tests run offline')
+
+    def _offline_session() -> requests.Session:
+        session = requests.Session()
+        session.request = _refuse
+        return session
+
+    monkeypatch.setattr(cookie_refresh, '_new_session', _offline_session)
 
 
 @pytest.fixture(scope='session')

@@ -8,16 +8,32 @@ import functools
 import os
 import re
 import sqlite3
-from collections.abc import Iterator
+import threading
+from collections.abc import AsyncIterator, Awaitable, Iterable, Iterator
 from dataclasses import asdict, dataclass
 from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
+from time import monotonic
 from typing import Any, Callable, Optional
 
 from loguru import logger
 
-from . import deezer, m3u, musicbrainz, providers, spotify
-from .artist_catalogue import ArtistCatalogue, release_key, watch_kinds
+from . import (
+    deezer,
+    m3u,
+    musicbrainz,
+    notifications,
+    providers,
+    spotify,
+    spotify_companion,
+)
+from .artist_catalogue import (
+    ArtistCatalogue,
+    release_day,
+    release_key,
+    upcoming,
+    watch_kinds,
+)
 from .artist_catalogue import wanted as release_wanted
 from .artist_release_store import ArtistReleaseStore
 from .cover_cache import CoverArtCache
@@ -28,6 +44,7 @@ from .download_policy import DownloadPolicy, DownloadPolicyBlocked
 from .download_queue import queue_pause
 from .downloader import (
     DOWNLOAD_EXECUTOR,
+    MAX_PARALLEL_DOWNLOADS,
     Downloader,
     ProgressCallback,
     save_playlist_cover,
@@ -39,7 +56,7 @@ from .library_metadata_cache import LibraryMetadataCache
 from .library_only import enabled, policy
 from .library_paths import locate_library_file, slskd_dir_from_downloader
 from .library_paths_cache import invalidate_library_paths_cache
-from .library_songs import LibrarySongs, same_recording
+from .library_songs import LibrarySongs, same_recording, song_identity
 from .navidrome import (
     _effective_navidrome_settings,
     cache_navidrome_song_id,
@@ -170,6 +187,29 @@ SOURCE_SPOTIFY = 'spotify'
 SOURCE_YOUTUBE_MUSIC = 'youtube_music'
 SOURCE_DEEZER = 'deezer'
 DEEZER_PLAYLIST_PREFIX = 'deezer:playlist:'
+SOURCE_MUSICBRAINZ = 'musicbrainz'
+#: The key (``spotify_id`` column) of an artist watch followed through
+#: MusicBrainz alone - an artist YouTube Music doesn't have - before the
+#: artist's MusicBrainz id. Every other artist watch is keyed by its
+#: YouTube Music channel id (``UC...``).
+MUSICBRAINZ_ARTIST_PREFIX = 'musicbrainz:artist:'
+
+
+def musicbrainz_artist_key(artist_id: str) -> str:
+    """The watch key of an artist followed through MusicBrainz alone."""
+
+    return MUSICBRAINZ_ARTIST_PREFIX + artist_id
+
+
+def musicbrainz_artist_of(watch_key: str) -> str:
+    """The MusicBrainz artist id of a MusicBrainz-only artist watch's
+    key, else ``''`` (the key is a YouTube Music channel id)."""
+
+    key = str(watch_key or '')
+    if key.startswith(MUSICBRAINZ_ARTIST_PREFIX):
+        return key[len(MUSICBRAINZ_ARTIST_PREFIX) :]
+    return ''
+
 
 #: The kinds of release an artist watch can download (YouTube Music's own
 #: 'Album' / 'Single' / 'EP' split). A watch stores the ones it wants as a
@@ -218,6 +258,8 @@ def watch_source(url: str) -> str:
         return SOURCE_YOUTUBE_MUSIC
     if deezer.parse_deezer_url(url or '') is not None:
         return SOURCE_DEEZER
+    if musicbrainz.parse_artist_url(url or ''):
+        return SOURCE_MUSICBRAINZ
     return SOURCE_SPOTIFY
 
 
@@ -1060,6 +1102,18 @@ async def check_playlist(
         tracks = await asyncio.to_thread(
             fetch_playlist_tracks, playlist.source, playlist.spotify_id
         )
+    except spotify_companion.CompanionWaiting:
+        # A personal mix the Spotify companion hasn't read yet (a new
+        # watch): ask it to read this one next. Not marked as checked, so
+        # nothing counts it as done.
+        logger.info(
+            'Watch "{}" waits for the Spotify companion to read it',
+            playlist.name,
+        )
+        store = spotify_companion.current()
+        if store is not None:
+            await asyncio.to_thread(store.request, playlist.id)
+        return 0
     except Exception:
         logger.exception('Failed to fetch playlist {}', playlist.spotify_id)
         await asyncio.to_thread(
@@ -1116,6 +1170,7 @@ async def check_playlist(
         known_tracks,
         resolved,
         initial=initial,
+        settings=settings or {},
     )
 
     if new_tracks:
@@ -1135,7 +1190,17 @@ async def check_playlist(
     track_positions = {id(t): i for i, t in enumerate(tracks)}
 
     downloaded = 0
-    for index, song in enumerate(new_tracks):
+    # As many songs at once as "Parallel downloads" allows (see
+    # :func:`_side_by_side`); a song listed twice waits for its first copy.
+    song_locks = _SongLocks()
+    m3u_lock = asyncio.Lock()
+
+    async def playlist_track(job: tuple[int, dict[str, Any]]) -> None:
+        async with song_locks.hold(job[1]):
+            await fetch_playlist_track(*job)
+
+    async def fetch_playlist_track(index: int, song: dict[str, Any]) -> None:
+        nonlocal downloaded
         track_id = song['song_id']
         # A paused download queue holds the sweep before each track.
         await queue_pause.wait()
@@ -1175,10 +1240,17 @@ async def check_playlist(
                 # Rewrite the M3U after every track rather than once the
                 # whole sweep finishes, so the playlist grows as it
                 # downloads and a slow/hung track further down the list
-                # never holds up what's already on disk.
-                await asyncio.to_thread(
-                    _regenerate_m3u, playlist, tracks, downloader, resolved
-                )
+                # never holds up what's already on disk. One write at a
+                # time, from a copy: other songs finish meanwhile.
+                async with m3u_lock:
+                    await asyncio.to_thread(
+                        _regenerate_m3u,
+                        playlist,
+                        tracks,
+                        downloader,
+                        dict(resolved),
+                        settings=settings,
+                    )
             if delay_seconds > 0 and index != len(new_tracks) - 1:
                 await asyncio.sleep(delay_seconds)
         except Exception as exc:
@@ -1188,6 +1260,10 @@ async def check_playlist(
                 await asyncio.to_thread(
                     _record_failure, db, playlist.id, song, exc
                 )
+
+    await _side_by_side(
+        enumerate(new_tracks), playlist_track, _parallel_limit(settings)
+    )
 
     await asyncio.to_thread(
         db.update_playlist,
@@ -1214,6 +1290,7 @@ async def check_playlist(
                 downloader,
                 None,
                 known_tracks,
+                settings=settings,
             )
         await asyncio.to_thread(
             _sync_library_playlist,
@@ -1274,20 +1351,29 @@ async def _split_new_tracks(
     resolved: dict[str, str],
     *,
     initial: bool = False,
+    settings: Optional[dict[str, Any]] = None,
 ) -> tuple[list[dict[str, Any]], int]:
     """``(tracks to download, number linked from the library)``.
 
     Tracks the watch already recorded are skipped (and their filenames
     added to ``resolved``). With *Overwrite existing files* off, a new
-    track the track index already has on disk is recorded for the watch
-    instead of being downloaded again (as :data:`OUTCOME_LINKED`).
+    track the library already holds is recorded for the watch instead of
+    being downloaded again (as :data:`OUTCOME_LINKED`): by its Spotify id
+    in the track index, else as the same song (:func:`_same_song_in_library`).
+
+    The second lookup is what stops a long-finished playlist from growing
+    (issue #573): Spotify swaps a playlist entry for the same song under
+    a new id (a re-release, a remaster, another market's copy), the new
+    id is unknown to the watch and to the index, and the name-based check
+    misses a title that changed (``… - Remastered 2011``).
     """
 
     new_tracks: list[dict[str, Any]] = []
     linked = 0
-    link_existing = library.track_index is not None and not getattr(
-        downloader, 'overwrite_existing_files', True
-    )
+    link_existing = not getattr(downloader, 'overwrite_existing_files', True)
+    settings = settings or {}
+    # The library by song, read once per sweep and only when needed.
+    songs: list[Optional[LibrarySongs]] = []
     for track in tracks:
         tid = track.get('song_id')
         if not tid:
@@ -1299,12 +1385,30 @@ async def _split_new_tracks(
             continue
         existing = (
             await asyncio.to_thread(
-                _library_file_for, track, downloader, library
+                _library_file_for, track, downloader, library, settings
             )
             if link_existing
             else None
         )
+        if not existing and link_existing:
+            if not songs:
+                songs.append(await asyncio.to_thread(_library_songs, library))
+            existing = await asyncio.to_thread(
+                _same_song_in_library,
+                track,
+                songs[0],
+                downloader,
+                library,
+                settings,
+            )
         if not existing:
+            logger.debug(
+                'Watch "{}": {} ({}) is new to the watch and not in the '
+                'library; downloading it',
+                playlist.name,
+                track.get('name'),
+                tid,
+            )
             new_tracks.append(track)
             continue
         await asyncio.to_thread(
@@ -1344,7 +1448,10 @@ async def _fetch_watch_track(
 
     observed: dict[str, Any] = {}
     progress = _progress_cb(song, playlist.name, broadcast, loop, observed)
-    async with queue_pause.running():
+    async with (
+        _download_slot(song, playlist.name, broadcast),
+        queue_pause.running(),
+    ):
         filename = await loop.run_in_executor(
             DOWNLOAD_EXECUTOR,
             lambda: downloader.download(song, progress, subdir=subdir),
@@ -1398,9 +1505,16 @@ def _forget_stale_failures(
 
 
 def _library_file_for(
-    song: dict[str, Any], downloader: Downloader, library: LibraryStores
+    song: dict[str, Any],
+    downloader: Downloader,
+    library: LibraryStores,
+    settings: Optional[dict[str, Any]] = None,
 ) -> Optional[str]:
-    """The library path already holding ``song`` per the track index."""
+    """The library path already holding ``song`` per the track index.
+
+    The configured external music folders count (an ``ext/…`` entry is
+    found there, not forgotten as missing); an entry whose file is gone
+    everywhere is forgotten."""
 
     tid = normalize_spotify_track_id(song)
     if not tid or library.track_index is None:
@@ -1408,12 +1522,48 @@ def _library_file_for(
     stored = library.track_index.lookup(tid)
     if not stored:
         return None
-    if locate_library_file(
-        stored, downloader.download_dir, slskd_dir_from_downloader(downloader)
-    ):
+    if _locate(stored, downloader, settings or {}):
         return stored
     library.track_index.forget(tid)
     return None
+
+
+def _same_song_in_library(
+    song: dict[str, Any],
+    songs: Optional[LibrarySongs],
+    downloader: Downloader,
+    library: LibraryStores,
+    settings: Optional[dict[str, Any]] = None,
+) -> Optional[str]:
+    """The library file holding ``song`` under another id: the same ISRC,
+    else the same song key and length (:mod:`downtify.library_songs`).
+
+    The file is then indexed under ``song``'s Spotify id too, so the next
+    sweep (and the playlist catalog) finds it straight away."""
+
+    if songs is None:
+        return None
+    found = songs.find(song)
+    if not found:
+        return None
+    full = _locate(found, downloader, settings or {})
+    if full is None:
+        return None
+    logger.info(
+        'Linking {!r} ({}) to {} already in the library (same song under '
+        'another id)',
+        song.get('name'),
+        song.get('song_id'),
+        found,
+    )
+    if library.track_index is not None:
+        try:
+            library.track_index.register_song(song, found, full_path=full)
+        except Exception:
+            logger.opt(exception=True).debug(
+                'Could not index {} for {}', found, song.get('song_id')
+            )
+    return found
 
 
 def _record_sweep_owner(
@@ -1523,11 +1673,15 @@ def _sync_library_playlist(
 
     download_dir = Path(downloader.download_dir)
     slskd_dir = slskd_dir_from_downloader(downloader)
+    # A song linked from an Existing music folder (``ext/…``) belongs to
+    # the playlist too: the library may live there while new downloads
+    # land in the downloads folder (issue #560).
+    extras = extra_dirs_from_settings(settings or {}, download_dir, slskd_dir)
     rows: list[tuple[dict[str, Any], str, Path]] = []
     for song in tracks:
         filename = known_tracks.get(song.get('song_id') or '')
         full = (
-            locate_library_file(filename, download_dir, slskd_dir)
+            locate_library_file(filename, download_dir, slskd_dir, extras)
             if filename
             else None
         )
@@ -1555,7 +1709,10 @@ def _sync_library_playlist(
         return
     songs = [
         enrich_song_from_library_file(
-            {**song, 'filename': filename}, download_dir, slskd_dir
+            {**song, 'filename': filename},
+            download_dir,
+            slskd_dir,
+            extra_dirs=extras,
         )
         for song, filename, _full in rows
     ]
@@ -1574,6 +1731,145 @@ def _sync_library_playlist(
         )
     except Exception:
         logger.exception('Navidrome sync failed for "{}"', playlist.name)
+
+
+#: Where the "Parallel downloads" limit lives (``api.state
+#: .download_semaphore``, replaced when the setting changes), set by
+#: :func:`share_download_slots`. A watch's downloads take a slot from it
+#: like every other download, so a burst of checks - a hundred watches
+#: added at once each starting its first check, "Check now", "Download
+#: all missing" - never runs more downloads than the setting allows.
+def _no_download_limit() -> Optional[asyncio.Semaphore]:
+    return None
+
+
+_download_slots: Callable[[], Optional[asyncio.Semaphore]] = _no_download_limit
+
+
+def share_download_slots(
+    get: Callable[[], Optional[asyncio.Semaphore]],
+) -> None:
+    """Make watch downloads wait for the limit *get* returns."""
+
+    global _download_slots
+    _download_slots = get
+
+
+@contextlib.asynccontextmanager
+async def _download_slot(
+    song: dict[str, Any],
+    label: str,
+    broadcast: Callable[[dict[str, Any]], Any],
+) -> AsyncIterator[None]:
+    """Hold one "Parallel downloads" slot for a watch's download.
+
+    While every slot is taken the song shows in the queue as waiting
+    (``queued``), as a pasted link would.
+    """
+
+    sem = _download_slots()
+    if sem is None:
+        yield
+        return
+    if sem.locked():
+        await broadcast({
+            'song': song,
+            'progress': 0,
+            'message': '',
+            'status': 'queued',
+            'playlist_name': label,
+        })
+    async with sem:
+        yield
+
+
+def _parallel_limit(settings: Optional[dict[str, Any]]) -> int:
+    """How many songs one watch downloads at once: the "Parallel
+    downloads" setting. The shared limit (:func:`_download_slot`) still
+    bounds every download together; this only keeps one watch from
+    filling the queue with waiting songs. One at a time when there is no
+    shared limit to wait on."""
+
+    if _download_slots() is None:
+        return 1
+    try:
+        count = int((settings or {}).get('max_parallel_downloads') or 3)
+    except (TypeError, ValueError):
+        count = 3
+    return max(1, min(count, MAX_PARALLEL_DOWNLOADS))
+
+
+_DONE = object()
+
+
+async def _side_by_side(
+    jobs: Iterable[Any] | AsyncIterator[Any],
+    work: Callable[[Any], Awaitable[None]],
+    limit: int,
+) -> None:
+    """Run *work* on every job, at most *limit* at a time, in order.
+
+    A watch used to download its songs one after another, so it held one
+    of the "Parallel downloads" slots however many were free. *jobs* may
+    be an async generator (an artist's releases are listed while their
+    songs download); a job whose *work* raises is logged and the others
+    go on.
+    """
+
+    queue: asyncio.Queue[Any] = asyncio.Queue(maxsize=max(1, limit))
+
+    async def worker() -> None:
+        while True:
+            job = await queue.get()
+            if job is _DONE:
+                return
+            try:
+                await work(job)
+            except Exception:
+                logger.exception('Watch download failed')
+
+    workers = [asyncio.create_task(worker()) for _ in range(max(1, limit))]
+    try:
+        if hasattr(jobs, '__aiter__'):
+            async for job in jobs:  # type: ignore[union-attr]
+                await queue.put(job)
+        else:
+            for job in jobs:  # type: ignore[union-attr]
+                await queue.put(job)
+        for _ in workers:
+            await queue.put(_DONE)
+        await asyncio.gather(*workers)
+    except BaseException:
+        for task in workers:
+            task.cancel()
+        await asyncio.gather(*workers, return_exceptions=True)
+        raise
+
+
+class _SongLocks:
+    """One lock per song (:func:`song_identity`), so two copies of a
+    song in one sweep never download at the same time: the second waits,
+    then finds the first one's file."""
+
+    def __init__(self) -> None:
+        self._locks: dict[str, asyncio.Lock] = {}
+
+    @contextlib.asynccontextmanager
+    async def hold(self, song: dict[str, Any]) -> AsyncIterator[None]:
+        key = song_identity(song) or f'id:{song.get("song_id")}'
+        lock = self._locks.setdefault(key, asyncio.Lock())
+        async with lock:
+            yield
+
+
+@dataclass
+class _ReleaseRun:
+    """One release of an artist sweep while its songs download."""
+
+    album: dict[str, Any]
+    complete: bool
+    release_tracks: dict[Any, Any]
+    pending: int = 0
 
 
 def _progress_cb(
@@ -1628,21 +1924,27 @@ def _artist_discography(
     processed twice, but its songs are downloaded once: the sweep links
     a song the library (or this sweep) already has. Raises only when no
     source answered.
+
+    An artist YouTube Music doesn't have is watched through MusicBrainz
+    (its watch key is :func:`musicbrainz_artist_key`): YouTube Music is
+    skipped and MusicBrainz is read whatever the setting says, since it
+    is the watch's own catalogue.
     """
 
     found: list[dict[str, Any]] = []
     asked = failed = 0
-    sources = [
-        (
+    musicbrainz_only = bool(musicbrainz_artist_of(playlist.spotify_id))
+    sources = []
+    if not musicbrainz_only:
+        sources.append((
             'YouTube Music',
             lambda: providers.artist_albums_from_channel_id(
                 playlist.spotify_id
             ),
-        )
-    ]
+        ))
     if settings.get('artist_watch_deezer'):
         sources.append(('Deezer', lambda: _deezer_releases(playlist, db)))
-    if settings.get('artist_watch_musicbrainz'):
+    if musicbrainz_only or settings.get('artist_watch_musicbrainz'):
         sources.append((
             'MusicBrainz',
             lambda: _musicbrainz_releases(playlist, db, settings, found),
@@ -1697,8 +1999,38 @@ def _deezer_releases(
             len(releases),
         )
         if playlist.new_only and not playlist.baseline_pending:
-            db.mark_albums_skipped(playlist.id, releases)
+            db.mark_albums_skipped(playlist.id, out_already(releases))
     return releases
+
+
+def out_already(albums: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """*albums* without the announced ones: a "new releases only" watch
+    records what is out as already there, never what is still to come."""
+
+    return [a for a in albums if not upcoming(a)]
+
+
+def spread_release_dates(albums: list[dict[str, Any]]) -> None:
+    """Give every listing of a release the date one catalogue has for
+    it (YouTube Music gives a year at most), so an announced album that
+    another catalogue lists already waits for its release day too."""
+
+    dates: dict[tuple[str, str], str] = {}
+    for album in albums:
+        day = release_day(album)
+        key = (
+            release_key(str(album.get('name') or '')),
+            release_type_of(album),
+        )
+        if len(day) > len(dates.get(key, '')):
+            dates[key] = day
+    for album in albums:
+        key = (
+            release_key(str(album.get('name') or '')),
+            release_type_of(album),
+        )
+        if len(dates.get(key, '')) > len(release_day(album)):
+            album['release_date'] = dates[key]
 
 
 def _musicbrainz_releases(
@@ -1725,8 +2057,14 @@ def _musicbrainz_releases(
     the artist, every group is recorded as already there, as for Deezer.
     """
 
-    artist_id = playlist.musicbrainz_id
+    artist_id = playlist.musicbrainz_id or musicbrainz_artist_of(
+        playlist.spotify_id
+    )
     linked = False
+    if artist_id and not playlist.musicbrainz_id:
+        # A MusicBrainz-only watch: its key names the artist.
+        db.update_playlist(playlist.id, musicbrainz_id=artist_id)
+        playlist.musicbrainz_id = artist_id
     if not artist_id:
         artist_id = musicbrainz.artist_id_for(
             playlist.name,
@@ -1764,7 +2102,7 @@ def _musicbrainz_releases(
             len(releases),
         )
         if playlist.new_only and not playlist.baseline_pending:
-            db.mark_albums_skipped(playlist.id, releases)
+            db.mark_albums_skipped(playlist.id, out_already(releases))
     known = {
         (release_key(str(a.get('name') or '')), release_type_of(a))
         for a in listed
@@ -1930,7 +2268,9 @@ def _release_file_present(
     settings: dict[str, Any],
 ) -> bool:
     path = _locate(filename, downloader, settings)
-    return path is not None and matches_release(path, song)
+    return path is not None and matches_release(
+        path, song, getattr(downloader, 'slskd_settings', None)
+    )
 
 
 def _library_file_exists(
@@ -1953,12 +2293,43 @@ def _library_songs(library: Optional[LibraryStores]) -> Optional[LibrarySongs]:
         return None
 
 
+def _same_release_files(
+    db: PlaylistMonitorDB,
+    playlist_id: int,
+    album: dict[str, Any],
+    albums: list[dict[str, Any]],
+) -> set[str]:
+    """The files recorded for the other listings of *album* in the
+    discography *albums*: the same release (name and type, see
+    :func:`release_key`) as another catalogue lists it - YouTube Music's
+    and Deezer's *Certified Lover Boy*."""
+
+    key = (release_key(str(album.get('name') or '')), release_type_of(album))
+    files: set[str] = set()
+    for other in albums:
+        other_id = other.get('album_id')
+        if (
+            not other_id
+            or other_id == album.get('album_id')
+            or (
+                release_key(str(other.get('name') or '')),
+                release_type_of(other),
+            )
+            != key
+        ):
+            continue
+        files.update(db.releases.tracks(playlist_id, str(other_id)).values())
+    return files
+
+
 def _download_release_track(
     downloader: Downloader,
     song: dict[str, Any],
     album: dict[str, Any],
     progress: Optional[ProgressCallback],
     observed: dict[str, Any],
+    *,
+    complete_albums: bool = False,
 ) -> str:
     """Download one track of a watched artist's release.
 
@@ -1970,14 +2341,18 @@ def _download_release_track(
     same name - another album's ``Intro``, with files organized by
     artist but not by album - the track is saved as ``<name> (<album>)``
     instead, so both songs are kept and the release can be completed.
+    With *complete_albums* the same recording is saved that way too, so
+    every release keeps a copy of its own (issue #546).
     """
 
     try:
         return downloader.download(song, progress)
     except FileExistsError:
         taken = downloader.existing_filename_for(song)
-        if taken and same_recording(
-            Path(downloader.download_dir) / taken, song
+        if (
+            not complete_albums
+            and taken
+            and same_recording(Path(downloader.download_dir) / taken, song)
         ):
             observed.update(reused=True, other_release=True)
             return taken
@@ -2015,7 +2390,9 @@ async def check_artist(  # noqa: PLR0914  # one sweep: discography, releases, tr
     Releases out before a "new releases only" watch stay skipped unless
     switched on.
 
-    ``playlist.spotify_id`` is the artist's YouTube Music channel id. The
+    ``playlist.spotify_id`` is the artist's YouTube Music channel id (or,
+    for an artist YouTube Music doesn't have, :func:`musicbrainz_artist_key`
+    - then MusicBrainz is the catalogue). The
     discography is listed once per sweep - YouTube Music's, plus Deezer's
     with ``artist_watch_deezer`` on (see :func:`_artist_discography`);
     only releases missing from ``seen_albums`` have their tracklists
@@ -2051,6 +2428,7 @@ async def check_artist(  # noqa: PLR0914  # one sweep: discography, releases, tr
             db.update_playlist, playlist.id, last_checked=_now_iso()
         )
         return 0
+    spread_release_dates(albums)
     # The watch's page lists the whole catalogue from this listing.
     await asyncio.to_thread(db.catalogue.record, playlist.id, albums)
 
@@ -2066,7 +2444,7 @@ async def check_artist(  # noqa: PLR0914  # one sweep: discography, releases, tr
             )
             return 0
         skipped = await asyncio.to_thread(
-            db.mark_albums_skipped, playlist.id, albums
+            db.mark_albums_skipped, playlist.id, out_already(albums)
         )
         logger.info(
             'Artist "{}" watches new releases only: {} existing release(s) '
@@ -2103,6 +2481,8 @@ async def check_artist(  # noqa: PLR0914  # one sweep: discography, releases, tr
         if a.get('album_id')
         and a['album_id'] not in seen
         and release_wanted(a, wanted_types, kinds, choices)
+        # Announced, not out yet: downloaded on its release day.
+        and not upcoming(a)
     ]
     if new_albums:
         logger.info(
@@ -2110,8 +2490,17 @@ async def check_artist(  # noqa: PLR0914  # one sweep: discography, releases, tr
             len(new_albums),
             playlist.name,
         )
+        notifications.emit(
+            'new_releases',
+            playlist.name,
+            ', '.join(str(a.get('name') or '') for a in new_albums[:5])
+            + (f' +{len(new_albums) - 5}' if len(new_albums) > 5 else ''),
+        )
 
     delay_seconds = (settings or {}).get('download_delay_seconds', 0) or 0
+    complete_albums = bool(
+        (settings or {}).get('artist_watch_complete_albums')
+    )
     known_tracks = await asyncio.to_thread(db.get_track_filenames, playlist.id)
     # Songs the library already holds under another name - a playlist
     # download named from Spotify, another release of this artist - are
@@ -2123,209 +2512,285 @@ async def check_artist(  # noqa: PLR0914  # one sweep: discography, releases, tr
     )
 
     downloaded = 0
-    for album in new_albums:
-        album_id = album['album_id']
-        await asyncio.to_thread(db.releases.attempt, playlist.id, album_id)
-        try:
-            tracks = await asyncio.to_thread(
-                _release_tracks, album, playlist.name
-            )
-        except Exception:
-            logger.exception(
-                'Failed to fetch tracks for release {} ({})',
-                album.get('name'),
-                album_id,
-            )
-            continue
-        if tracks is None:
-            # Another artist's release this one is only featured on, or
-            # a bootleg.
-            await asyncio.to_thread(
-                db.mark_albums_skipped, playlist.id, [album]
-            )
-            await asyncio.to_thread(
-                db.catalogue.set_not_own, playlist.id, album_id
-            )
-            continue
-        # The watch's page counts what the library has of it from this.
-        await asyncio.to_thread(
-            db.catalogue.store_tracks, playlist.id, album_id, tracks
-        )
+    # A watch downloads as many songs at once as "Parallel downloads"
+    # allows (see :func:`_side_by_side`); two that may be the same
+    # recording - a song on an album and on its deluxe edition - wait
+    # for each other, so the second is linked rather than downloaded.
+    song_locks = _SongLocks()
 
-        complete = bool(tracks) and max(
-            (int(s.get('album_track_total') or 0) for s in tracks), default=0
-        ) <= len(tracks)
-        release_tracks = await asyncio.to_thread(
-            db.releases.tracks, playlist.id, album_id
-        )
-        for position, song in enumerate(tracks, start=1):
-            track_id = song.get('song_id')
-            if not track_id:
-                complete = False
-                continue
-            filename = release_tracks.get(
-                (position, track_id), known_tracks.get(track_id)
-            )
-            if filename and await asyncio.to_thread(
-                _release_file_present,
-                filename,
-                song,
-                downloader,
-                settings or {},
-            ):
-                await asyncio.to_thread(
-                    db.releases.record,
-                    playlist.id,
-                    album_id,
-                    position,
-                    track_id,
-                    filename,
-                )
-                continue
-            same = songs.find(song) if songs is not None else None
-            if same and await asyncio.to_thread(
-                _library_file_exists, same, downloader, settings or {}
-            ):
-                await asyncio.to_thread(
-                    functools.partial(
-                        db.mark_track_downloaded,
-                        playlist.id,
-                        track_id,
-                        same,
-                        outcome=OUTCOME_LINKED,
-                        initial=playlist.last_checked is None,
-                    )
-                )
-                await asyncio.to_thread(
-                    db.releases.record,
-                    playlist.id,
-                    album_id,
-                    position,
-                    track_id,
-                    same,
-                )
-                known_tracks[track_id] = same
-                continue
-            if await asyncio.to_thread(db.download_policy.blocked, song):
-                complete = False
-                continue
-            await queue_pause.wait()
+    async def release_jobs() -> AsyncIterator[
+        tuple[_ReleaseRun, int, dict[str, Any]]
+    ]:
+        for album in new_albums:
+            album_id = album['album_id']
+            await asyncio.to_thread(db.releases.attempt, playlist.id, album_id)
             try:
-                observed: dict[str, Any] = {}
-                async with queue_pause.running():
-                    filename = await loop.run_in_executor(
-                        DOWNLOAD_EXECUTOR,
-                        lambda s=song, a=album, progress_state=observed: (
-                            _download_release_track(
-                                downloader,
-                                {**s, '_monitor_release': a['album_id']},
-                                a,
-                                _progress_cb(
-                                    s,
-                                    playlist.name,
-                                    broadcast,
-                                    loop,
-                                    progress_state,
-                                ),
-                                progress_state,
-                            )
-                        ),
-                    )
-                if not filename or not (
-                    observed.get('other_release')
-                    or await asyncio.to_thread(
-                        _release_file_present,
-                        filename,
-                        song,
-                        downloader,
-                        settings or {},
-                    )
-                ):
-                    raise ValueError(
-                        'Downloaded file does not validate against the requested release'
-                    )
-                await asyncio.to_thread(
-                    functools.partial(
-                        db.mark_track_downloaded,
-                        playlist.id,
-                        track_id,
-                        filename,
-                        outcome=_outcome_of(observed),
-                        provider=observed.get('provider', ''),
-                        # The first check downloads the back catalog.
-                        initial=playlist.last_checked is None,
-                    )
+                tracks = await asyncio.to_thread(
+                    _release_tracks, album, playlist.name
                 )
-                await asyncio.to_thread(
-                    db.releases.record,
-                    playlist.id,
-                    album_id,
-                    position,
-                    track_id,
-                    filename,
-                )
-                await asyncio.to_thread(db.download_policy.succeeded, song)
-                invalidate_library_paths_cache()
-                known_tracks[track_id] = filename
-                if songs is not None:
-                    songs.add(filename, song)
-                downloaded += int(not observed.get('reused'))
-                if library is not None and filename:
-                    await asyncio.to_thread(
-                        _record_artist_sweep_owner,
-                        library,
-                        filename,
-                        downloader,
-                        playlist.user_id,
-                    )
-                await broadcast({
-                    'song': song,
-                    'progress': 100,
-                    'message': 'Already downloaded'
-                    if observed.get('reused')
-                    else 'Done',
-                    'status': 'done',
-                    'filename': filename,
-                    'playlist_name': playlist.name,
-                    'reused': bool(observed.get('reused')),
-                    'provider': observed.get('provider', ''),
-                })
-                if delay_seconds > 0 and not observed.get('reused'):
-                    await asyncio.sleep(delay_seconds)
-            except DownloadPolicyBlocked:
-                complete = False
-                await broadcast({
-                    'song': song,
-                    'status': 'failed',
-                    'progress': 0,
-                    'message': 'download_excluded',
-                    'playlist_name': playlist.name,
-                })
-            except Exception as exc:
-                complete = False
+            except Exception:
                 logger.exception(
-                    'Failed to auto-download track {} of release {}',
-                    track_id,
+                    'Failed to fetch tracks for release {} ({})',
                     album.get('name'),
+                    album_id,
+                )
+                continue
+            if tracks is None:
+                # Another artist's release this one is only featured on, or
+                # a bootleg.
+                await asyncio.to_thread(
+                    db.mark_albums_skipped, playlist.id, [album]
                 )
                 await asyncio.to_thread(
-                    _record_failure, db, playlist.id, song, exc
+                    db.catalogue.set_not_own, playlist.id, album_id
                 )
-                await broadcast({
-                    'song': song,
-                    'status': 'error',
-                    'message': 'Artist release download or validation failed',
-                    'playlist_name': playlist.name,
-                })
+                continue
+            # The watch's page counts what the library has of it from this.
+            await asyncio.to_thread(
+                db.catalogue.store_tracks, playlist.id, album_id, tracks
+            )
 
-        # Only remember the release once every track is accounted for, so
-        # a transient failure is retried on the next sweep instead of
+            complete = bool(tracks) and max(
+                (int(s.get('album_track_total') or 0) for s in tracks),
+                default=0,
+            ) <= len(tracks)
+            release_tracks = await asyncio.to_thread(
+                db.releases.tracks, playlist.id, album_id
+            )
+            run = _ReleaseRun(album, complete, release_tracks)
+            jobs = []
+            for position, song in enumerate(tracks, start=1):
+                if not song.get('song_id'):
+                    run.complete = False
+                    continue
+                jobs.append((run, position, song))
+            run.pending = len(jobs)
+            if not jobs:
+                await finish_release(run)
+            for job in jobs:
+                yield job
+
+    async def finish_release(run: _ReleaseRun) -> None:
+        # Only remember the release once every track is accounted for,
+        # so a transient failure is retried on the next sweep instead of
         # being silently skipped forever. Tracks that already succeeded
         # are cheap to skip via `known_tracks`.
-        if complete:
+        if run.complete:
             await asyncio.to_thread(
-                db.mark_album_seen, playlist.id, album_id, album.get('name')
+                db.mark_album_seen,
+                playlist.id,
+                run.album['album_id'],
+                run.album.get('name'),
             )
+
+    async def release_track(
+        job: tuple[_ReleaseRun, int, dict[str, Any]],
+    ) -> None:
+        run, _position, song = job
+        try:
+            async with song_locks.hold(song):
+                if not await fetch_release_track(*job):
+                    run.complete = False
+        except Exception:
+            run.complete = False
+            raise
+        finally:
+            run.pending -= 1
+            if run.pending == 0:
+                await finish_release(run)
+
+    async def fetch_release_track(
+        run: _ReleaseRun, position: int, song: dict[str, Any]
+    ) -> bool:
+        """One song of a release: linked, downloaded or failed. Returns
+        whether it is accounted for."""
+
+        nonlocal downloaded
+        album = run.album
+        album_id = album['album_id']
+        release_tracks = run.release_tracks
+        track_id = song['song_id']
+        ok = True
+        filename = release_tracks.get(
+            (position, track_id), known_tracks.get(track_id)
+        )
+        if filename and await asyncio.to_thread(
+            _release_file_present,
+            filename,
+            song,
+            downloader,
+            settings or {},
+        ):
+            await asyncio.to_thread(
+                db.releases.record,
+                playlist.id,
+                album_id,
+                position,
+                track_id,
+                filename,
+            )
+            return ok
+        # "Keep every album complete": each release gets its own copy
+        # of a song it shares with another (a greatest hits, a deluxe
+        # edition, a single) instead of linking the one already there -
+        # but not a second copy for another listing of the same one.
+        same = songs.find(song) if songs is not None else None
+        # "Keep every album complete" is about different releases: the
+        # files another catalogue's listing of this very release brought
+        # in are still linked (issue #669). Read now, not when the release
+        # was listed: that listing's songs may have finished meanwhile.
+        if (
+            complete_albums
+            and same
+            and same
+            not in await asyncio.to_thread(
+                _same_release_files, db, playlist.id, album, albums
+            )
+        ):
+            same = None
+        if same and await asyncio.to_thread(
+            _library_file_exists, same, downloader, settings or {}
+        ):
+            await asyncio.to_thread(
+                functools.partial(
+                    db.mark_track_downloaded,
+                    playlist.id,
+                    track_id,
+                    same,
+                    outcome=OUTCOME_LINKED,
+                    initial=playlist.last_checked is None,
+                )
+            )
+            await asyncio.to_thread(
+                db.releases.record,
+                playlist.id,
+                album_id,
+                position,
+                track_id,
+                same,
+            )
+            known_tracks[track_id] = same
+            return ok
+        if await asyncio.to_thread(db.download_policy.blocked, song):
+            ok = False
+            return ok
+        await queue_pause.wait()
+        try:
+            observed: dict[str, Any] = {}
+            async with (
+                _download_slot(song, playlist.name, broadcast),
+                queue_pause.running(),
+            ):
+                filename = await loop.run_in_executor(
+                    DOWNLOAD_EXECUTOR,
+                    lambda s=song, a=album, progress_state=observed: (
+                        _download_release_track(
+                            downloader,
+                            {**s, '_monitor_release': a['album_id']},
+                            a,
+                            _progress_cb(
+                                s,
+                                playlist.name,
+                                broadcast,
+                                loop,
+                                progress_state,
+                            ),
+                            progress_state,
+                            complete_albums=complete_albums,
+                        )
+                    ),
+                )
+            if not filename or not (
+                observed.get('other_release')
+                or await asyncio.to_thread(
+                    _release_file_present,
+                    filename,
+                    song,
+                    downloader,
+                    settings or {},
+                )
+            ):
+                raise ValueError(
+                    'Downloaded file does not validate against the requested release'
+                )
+            await asyncio.to_thread(
+                functools.partial(
+                    db.mark_track_downloaded,
+                    playlist.id,
+                    track_id,
+                    filename,
+                    outcome=_outcome_of(observed),
+                    provider=observed.get('provider', ''),
+                    # The first check downloads the back catalog.
+                    initial=playlist.last_checked is None,
+                )
+            )
+            await asyncio.to_thread(
+                db.releases.record,
+                playlist.id,
+                album_id,
+                position,
+                track_id,
+                filename,
+            )
+            await asyncio.to_thread(db.download_policy.succeeded, song)
+            invalidate_library_paths_cache()
+            known_tracks[track_id] = filename
+            if songs is not None:
+                songs.add(filename, song)
+            downloaded += int(not observed.get('reused'))
+            if library is not None and filename:
+                await asyncio.to_thread(
+                    _record_artist_sweep_owner,
+                    library,
+                    filename,
+                    downloader,
+                    playlist.user_id,
+                )
+            await broadcast({
+                'song': song,
+                'progress': 100,
+                'message': 'Already downloaded'
+                if observed.get('reused')
+                else 'Done',
+                'status': 'done',
+                'filename': filename,
+                'playlist_name': playlist.name,
+                'reused': bool(observed.get('reused')),
+                'provider': observed.get('provider', ''),
+            })
+            if delay_seconds > 0 and not observed.get('reused'):
+                await asyncio.sleep(delay_seconds)
+        except DownloadPolicyBlocked:
+            ok = False
+            await broadcast({
+                'song': song,
+                'status': 'failed',
+                'progress': 0,
+                'message': 'download_excluded',
+                'playlist_name': playlist.name,
+            })
+        except Exception as exc:
+            ok = False
+            logger.exception(
+                'Failed to auto-download track {} of release {}',
+                track_id,
+                album.get('name'),
+            )
+            await asyncio.to_thread(
+                _record_failure, db, playlist.id, song, exc
+            )
+            await broadcast({
+                'song': song,
+                'status': 'error',
+                'message': 'Artist release download or validation failed',
+                'playlist_name': playlist.name,
+            })
+        return ok
+
+    await _side_by_side(
+        release_jobs(), release_track, _parallel_limit(settings)
+    )
 
     await asyncio.to_thread(
         db.update_playlist,
@@ -2342,6 +2807,8 @@ def _regenerate_m3u(
     downloader: Downloader,
     resolved: Optional[dict[str, str]] = None,
     known_tracks: Optional[dict[str, Optional[str]]] = None,
+    *,
+    settings: Optional[dict[str, Any]] = None,
 ) -> Optional[Path]:
     """Rewrite the playlist's M3U, in playlist order. Returns its path,
     or ``None`` when nothing was written.
@@ -2359,11 +2826,16 @@ def _regenerate_m3u(
     (``known_tracks``) when that file exists — it may be a track linked
     from elsewhere in the library, e.g. an slskd download — else the
     track's expected path in the playlist folder.
+
+    Songs linked from the Existing music folders in *settings* are kept
+    (issue #560); without *settings* only the downloads and slskd
+    folders count.
     """
 
     pl_subdir = m3u.sanitize_playlist_name(playlist.name)
     download_dir = Path(downloader.download_dir)
     slskd_dir = slskd_dir_from_downloader(downloader)
+    extras = extra_dirs_from_settings(settings or {}, download_dir, slskd_dir)
     entries: list[dict[str, Any]] = []
     for song in tracks:
         if resolved is not None:
@@ -2372,7 +2844,9 @@ def _regenerate_m3u(
             filename = (known_tracks or {}).get(song.get('song_id') or '')
             if not (
                 filename
-                and locate_library_file(filename, download_dir, slskd_dir)
+                and locate_library_file(
+                    filename, download_dir, slskd_dir, extras
+                )
             ):
                 filename = downloader.existing_filename_for(
                     song, subdir=pl_subdir
@@ -2401,6 +2875,7 @@ def _regenerate_m3u(
         entries,
         playlist_subdir=None if organize else pl_subdir,
         slskd_dir=slskd_dir,
+        extra_dirs=extras,
     )
     return path
 
@@ -2531,6 +3006,134 @@ async def check_watch(
         )
 
 
+def _watch_cover_file(
+    playlist: MonitoredPlaylist, downloader: Downloader
+) -> str:
+    """Where a watched playlist's cover is saved (see
+    :func:`_download_cover_for_watch`), relative to the download folder -
+    what ``/playlist-cover?file=`` takes. ``''`` for an artist (the page
+    shows the artist's photo) or when the path can't be worked out."""
+
+    if playlist.kind != KIND_PLAYLIST:
+        return ''
+    try:
+        organize = (
+            downloader.organize_by_artist or downloader.organize_by_album
+        )
+        root = Path(downloader.download_dir)
+        m3u_path = m3u.m3u_path_for(
+            root,
+            playlist.name,
+            playlist_subdir=None
+            if organize
+            else m3u.sanitize_playlist_name(playlist.name),
+        )
+        return Path(m3u_path).with_suffix('.jpg').relative_to(root).as_posix()
+    except Exception:
+        return ''
+
+
+def saved_watch_cover(
+    playlist: MonitoredPlaylist, downloader: Downloader
+) -> Optional[Path]:
+    """The cover saved beside a watched playlist's M3U, when it is there
+    (see :func:`_download_cover_for_watch`); ``None`` otherwise."""
+
+    relative = _watch_cover_file(playlist, downloader)
+    if not relative:
+        return None
+    root = Path(downloader.download_dir)
+    path = root / relative
+    try:
+        if path.is_file() and path.resolve().is_relative_to(root.resolve()):
+            return path
+    except OSError:
+        pass
+    return None
+
+
+#: How long a watched playlist's cover address is remembered: a day once
+#: found (Spotify's mixes get a new picture now and then), an hour when
+#: the service had none or didn't answer.
+WATCH_COVER_TTL_SECONDS = 24 * 60 * 60
+WATCH_COVER_MISS_TTL_SECONDS = 60 * 60
+_watch_cover_urls: dict[tuple[str, str], tuple[float, str]] = {}
+# Two lookups at a time: a page of covers opening at once must not send
+# a burst of requests to Spotify.
+_watch_cover_lookups = threading.BoundedSemaphore(2)
+
+
+def _remembered_cover_url(key: tuple[str, str]) -> Optional[str]:
+    hit = _watch_cover_urls.get(key)
+    if hit is None:
+        return None
+    found_at, url = hit
+    ttl = WATCH_COVER_TTL_SECONDS if url else WATCH_COVER_MISS_TTL_SECONDS
+    return url if monotonic() - found_at < ttl else None
+
+
+def watch_cover_url(playlist: MonitoredPlaylist) -> str:
+    """The cover a watched playlist has on its service (Spotify, YouTube
+    Music or Deezer), for the Monitor page to show; ``''`` for an artist
+    or when there is none. Remembered for a while (blocking)."""
+
+    if playlist.kind != KIND_PLAYLIST or not playlist.spotify_id:
+        return ''
+    key = (playlist.source, playlist.spotify_id)
+    remembered = _remembered_cover_url(key)
+    if remembered is not None:
+        return remembered
+    with _watch_cover_lookups:
+        remembered = _remembered_cover_url(key)
+        if remembered is not None:
+            return remembered
+        try:
+            url = fetch_playlist_cover_url(
+                playlist.source, playlist.spotify_id
+            )
+        except Exception:
+            logger.opt(exception=True).debug(
+                'No cover for watched playlist {} ({})',
+                playlist.name,
+                playlist.source,
+            )
+            url = ''
+        url = str(url or '')
+        if not url.startswith('https://'):
+            url = ''
+        _watch_cover_urls[key] = (monotonic(), url)
+        return url
+
+
+def queue_watch(
+    playlist: MonitoredPlaylist, downloader: Downloader
+) -> dict[str, Any]:
+    """The watch a download came from, as the queue shows it."""
+
+    return {
+        'id': playlist.id,
+        'name': playlist.name,
+        'kind': playlist.kind,
+        'url': playlist.url,
+        'source': playlist.source,
+        'cover_file': _watch_cover_file(playlist, downloader),
+    }
+
+
+def with_watch(
+    broadcast: Callable[[dict[str, Any]], Any], watch: dict[str, Any]
+) -> Callable[[dict[str, Any]], Any]:
+    """*broadcast*, adding ``watch`` to every song event, so the queue can
+    say which watch is downloading each song."""
+
+    def send(message: dict[str, Any]) -> Any:
+        if isinstance(message, dict) and 'song' in message:
+            message = {**message, 'watch': watch}
+        return broadcast(message)
+
+    return send
+
+
 async def _check_watch_online(
     playlist: MonitoredPlaylist,
     db: PlaylistMonitorDB,
@@ -2549,6 +3152,10 @@ async def _check_watch_online(
         return 0
     _checks_running.add(playlist.id)
     try:
+        if playlist.kind != KIND_PODCAST:
+            broadcast = with_watch(
+                broadcast, queue_watch(playlist, downloader)
+            )
         if playlist.kind == KIND_PODCAST:
             if podcasts is None:
                 logger.warning(
@@ -2582,6 +3189,18 @@ async def _check_watch_online(
         _checks_running.discard(playlist.id)
 
 
+def companion_reads(playlist: MonitoredPlaylist) -> bool:
+    """Whether the Spotify companion, not this loop, decides when
+    *playlist* is checked (a personal Spotify mix with the companion on;
+    see downtify/spotify_companion.py)."""
+
+    return (
+        playlist.kind == KIND_PLAYLIST
+        and playlist.source == SOURCE_SPOTIFY
+        and spotify_companion.manages(playlist.spotify_id)
+    )
+
+
 async def monitor_loop(
     db: PlaylistMonitorDB,
     get_downloader: Callable[[], Optional[Downloader]],
@@ -2600,7 +3219,18 @@ async def monitor_loop(
                 await queue_pause.wait()
                 if not pl.enabled:
                     continue
-                if not _is_due(pl.last_checked, pl.interval_minutes):
+                if companion_reads(pl):
+                    # The Spotify companion reads this mix in its own
+                    # time slots and starts the check itself.
+                    continue
+                if not _is_due(pl.last_checked, pl.interval_minutes) and not (
+                    pl.kind == KIND_ARTIST
+                    and await asyncio.to_thread(
+                        db.catalogue.release_day_arrived,
+                        pl.id,
+                        pl.last_checked,
+                    )
+                ):
                     continue
                 downloader = get_downloader()
                 if downloader is None:
@@ -2621,6 +3251,9 @@ async def monitor_loop(
                             'Auto-downloaded {} new track(s) from "{}"',
                             count,
                             pl.name,
+                        )
+                        notifications.emit(
+                            'watch_done', pl.name, f'{count} new song(s)'
                         )
                 except Exception:
                     logger.exception(

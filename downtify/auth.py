@@ -997,10 +997,15 @@ RULES: list[tuple[frozenset[str], re.Pattern[str], str]] = [
         (_m('POST'), r'^/api/auth/logout$', PUBLIC),
         (_m('POST'), r'^/api/auth/pair$', PUBLIC),
         (_m('POST'), r'^/api/auth/token$', PUBLIC),
+        # The Doctor's AI helper: an assistant has no account; the
+        # endpoint checks the helper's own key (downtify/doctor_ai.py).
+        (_m('GET', 'POST', 'DELETE'), r'^/api/doctor/ai/mcp$', PUBLIC),
         # Any signed-in user: their own account, devices and pairing
         # (the routes check whose), and a WebSocket ticket.
         (_m('POST'), r'^/api/auth/ws-ticket$', CLIENT),
         (_READ, r'^/api/me$', CLIENT),
+        # Your storage quota and usage (downtify/storage_quota_routes.py).
+        (_READ, r'^/api/me/storage$', CLIENT),
         (_ALL, r'^/api/me(/|$)', USER),
         (_ALL, r'^/api/auth/(devices|pairing)(/|$)', USER),
         # A signed-in browser (a user or an admin - paired apps stay
@@ -1012,6 +1017,8 @@ RULES: list[tuple[frozenset[str], re.Pattern[str], str]] = [
         (_ALL, r'^/api/library/playlist', USER),
         (_m('POST'), r'^/api/library/archive', USER),
         (_READ, r'^/api/library/archive/', USER),
+        # Moving a song's lyrics timing, like editing its tags (#663).
+        (_m('POST'), r'^/api/library/lyrics/offset$', USER),
         (_m('DELETE'), r'^/api/queue', USER),
         (_m('POST'), r'^/api/likes/clear$', USER),
         (_m('POST'), r'^/api/download/csv$', USER),
@@ -1022,12 +1029,13 @@ RULES: list[tuple[frozenset[str], re.Pattern[str], str]] = [
         (_m('PATCH', 'DELETE'), r'^/api/podcasts/shows/\d+$', USER),
         (_m('DELETE'), r'^/api/podcasts/episodes/\d+$', USER),
         (_m('POST', 'PATCH', 'DELETE'), r'^/api/monitor/playlists', USER),
-        # Where a song came from and what each watch added (own
-        # watches; every one for an admin).
+        # Where a song came from and what each watch added, and a
+        # playlist watch's picture (own watches; every one for an admin).
         (_READ, r'^/api/monitor/(stats|provenance)$', USER),
         (
             _READ,
-            r'^/api/monitor/playlists/\d+/(tracks|releases|releases/tracks)$',
+            r'^/api/monitor/playlists/\d+/'
+            r'(tracks|releases|releases/tracks|cover)$',
             USER,
         ),
         # Artists to suggest following, from one's own listens.
@@ -1044,9 +1052,15 @@ RULES: list[tuple[frozenset[str], re.Pattern[str], str]] = [
         (_ALL, r'^/api/auth/', ADMIN),
         (_ALL, r'^/api/server(/port)?$', ADMIN),
         (_ALL, r'^/api/settings', ADMIN),
+        (_ALL, r'^/api/backups(/.*)?$', ADMIN),
+        (_ALL, r'^/api/notifications(/.*)?$', ADMIN),
         (_READ, r'^/api/fs/dirs$', ADMIN),
-        (_ALL, r'^/api/cookies$', ADMIN),
+        (_ALL, r'^/api/cookies(/check)?$', ADMIN),
         (_ALL, r'^/api/(slskd|navidrome|deemix)/test$', ADMIN),
+        # AcoustID: the key and its test (downtify/acoustid_routes.py).
+        (_ALL, r'^/api/acoustid(/key|/test)?$', ADMIN),
+        # Why downloads didn't come from slskd (downtify/slskd_misses.py).
+        (_ALL, r'^/api/slskd/misses$', ADMIN),
         (_ALL, r'^/api/proxy/test$', ADMIN),
         (_ALL, r'^/api/similar/test$', ADMIN),
         (_READ, r'^/api/library/summary$', CLIENT),
@@ -1056,7 +1070,7 @@ RULES: list[tuple[frozenset[str], re.Pattern[str], str]] = [
         (_m('POST'), r'^/api/library/lookup$', CLIENT),
         (
             _ALL,
-            r'^/api/library/(upgrade|reconcile|archive|replace|external'
+            r'^/api/library/(upgrade|low-bitrate|reconcile|archive|replace|external'
             r'|visibility|usage|compilation)',
             ADMIN,
         ),
@@ -1084,6 +1098,8 @@ RULES: list[tuple[frozenset[str], re.Pattern[str], str]] = [
             CLIENT,
         ),
         (_READ, r'^/api/stream/file$', CLIENT),
+        # A song's music video (downtify/music_video.py).
+        (_READ, r'^/api/music-video(/file)?$', CLIENT),
         (_m('POST'), r'^/api/stream/prefetch$', CLIENT),
         (_m('POST'), r'^/api/download/(url|batch|album)$', CLIENT),
         (_READ, r'^/api/queue(/state)?$', CLIENT),
@@ -1106,6 +1122,27 @@ RULES: list[tuple[frozenset[str], re.Pattern[str], str]] = [
         (_m('POST'), r'^/api/activity/playback$', CLIENT),
         (_READ, r'^/api/monitor/playlists$', CLIENT),
         (_READ, r'^/api/check_update$', CLIENT),
+        # Aurral's Downtify plugin, with a key made under Settings >
+        # Apps > Aurral (downtify/aurral_routes.py). Each job is its
+        # owner's; making a key needs an admin's browser.
+        (_m('POST'), r'^/api/aurral/key$', ADMIN),
+        (_READ, r'^/api/aurral(/.*)?$', CLIENT),
+        (_m('POST'), r'^/api/aurral/jobs$', CLIENT),
+        (_m('DELETE'), r'^/api/aurral/jobs/[^/]+$', CLIENT),
+        # The Spotify companion (downtify/spotify_companion_routes.py):
+        # the extension asks what to read and sends the songs back with a
+        # paired-app key; the Monitor page reads the badges. Its settings
+        # and the extension download are an admin's.
+        (_m('POST'), r'^/api/companion/(poll|result)$', CLIENT),
+        (_READ, r'^/api/companion/watches$', CLIENT),
+        # The setup link for an AI agent: its long, day-long ticket is the
+        # key (downtify/spotify_companion_agent.py).
+        (
+            _READ,
+            r'^/api/companion/agent/[A-Za-z0-9_-]{20,}/(extension\.zip|status)$',
+            PUBLIC,
+        ),
+        (_ALL, r'^/api/companion(/.*)?$', ADMIN),
         # Admin (after the client rules, which carve out exceptions):
         # changes to the library, the queue, watches and profiles.
         (_m('POST', 'PUT', 'DELETE'), r'^/api/artists/(art|profile)', ADMIN),

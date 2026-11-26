@@ -1,11 +1,11 @@
 [project]
 name = "downtify"
-version = "3.11.0"
+version = "3.14.0"
 description = "Download your Spotify playlists and songs along with album art and metadata in a self-hosted way via Docker"
 readme = "README.md"
 requires-python = ">=3.11,<3.15"
 dependencies = [
-    "fastapi>=0.163.1",
+    "fastapi>=0.165.0",
     "feedparser>=6.0.14",
     "httpx[socks]>=0.28.1",
     "joserfc>=1.8.0",
@@ -16,22 +16,28 @@ dependencies = [
     "requests[socks]>=2.34.2",
     "uvicorn>=0.54.0",
     "websockets>=17.4",
-    "yt-dlp>=2026.10.26",
-    "ytmusicapi>=1.12.3",
+    "yt-dlp>=2026.11.23",
+    "ytmusicapi>=1.12.4",
     "zeroconf>=0.154.0",
 ]
 
 [dependency-groups]
 dev = [
     "codeflash>=0.20.6",
+    "gevent>=26.9.0",
     "httpx2>=2.16.2",
     "pytest>=9.2.0",
     "pytest-codspeed>=5.0.4",
-    "ruff>=0.17.5",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.17.6",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+asyncio_mode = 'auto'
+
+[tool.coverage.run]
+concurrency = ["thread", "gevent"]
 
 [tool.uv]
 upgrade = true

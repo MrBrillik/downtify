@@ -548,7 +548,7 @@ Whoever asks for a download owns the tracks: a second user asking for the same s
 
 ### `POST /api/download/url`
 
-Download a single track. Blocks until complete.
+Download a single track. Blocks until complete. Meanwhile its job reads `queued` in `GET /api/queue` until a download slot is free, then `downloading`. A job that fails is kept across restarts and comes back as `error` with its message (it is never retried on its own); retrying, removing it or clearing the queue forgets it.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -557,7 +557,9 @@ Download a single track. Blocks until complete.
 
 **Request body (optional):** the song object as returned by search/resolve. Its `track_number`/`album_track_total` survive the re-fetch by URL, `youtube_id` (a video id) or `soundcloud_url` (a SoundCloud track URL) forces the audio source — one replaces the other, and either is used at its source's place in `audio_providers` — and `downtify_playlist_url` (a Spotify playlist URL) registers the track as part of that playlist's download. A body with `"source": "deezer"` (a Deezer chart or resolved-link row) is taken as-is instead of re-fetching by `url` - Deezer isn't a URL this endpoint otherwise resolves on its own.
 
-**Response:** Filename string of the downloaded file — a `slskd/…` path for a slskd download left in place. `404` when no audio source has a match for the track.
+**Response:** Filename string of the downloaded file — a `slskd/…` path for a slskd download left in place. `404` when no audio source has a match for the track. `507` when the account is out of [storage quota](features/storage-quotas.md) — the `detail` gives the space used and left; `POST /api/download/batch`, `/album` and `/csv` answer the same, and a queued job that starts once its account is out of space ends with that message.
+
+With `"skip_if_in_library": true` in the body, a song the library already has is not downloaded: the response is `{ "status": "already_in_library", "filename", "match" }` instead, `match` being `catalog_id` or `song_key`. A song counts as owned with the same Spotify track, the same YouTube video or SoundCloud track a library file was downloaded from (recorded since 3.12), or the same ISRC; otherwise the same lead artist and title, with feat./with credits and remaster tags folded (so a remaster or another release counts, a live version or a remix doesn't). Only songs the caller can see count. Without the flag nothing changes, whatever **Download again if the file exists** says.
 
 ---
 
@@ -582,6 +584,8 @@ Download multiple tracks concurrently, gated by the [`max_parallel_downloads` se
 | `playlist_name` | string | Optional. Names the playlist subfolder and M3U when there is no `playlist_url`, e.g. an artist's [top songs](features/top-songs.md). Ignored when `playlist_url` resolves. |
 | `cover_url` | string | Optional. Image saved as the playlist's [cover art](features/playlist-cover-art.md) when there is no `playlist_url`. Only used when `generate_m3u` is true, a `playlist_name` is set and the cover art setting is on. |
 | `generate_m3u` | boolean | Whether to write an M3U after the batch finishes. Default: `true`. |
+| `as_album` | boolean | Optional. Save the playlist as one album: album = the playlist's name, album artist "Various Artists" with the compilation flag, tracks numbered in `downtify_track_order`, `cover_url` (when given) as every track's cover, filed in one folder. A song the library has elsewhere is downloaded again into the album. See [Downloading a playlist as an album](features/file-organization.md#downloading-a-playlist-as-an-album). Default: `false`. |
+| `skip_if_in_library` | boolean | Optional. Leave out the songs the library already has (same rule as [`POST /api/download/url`](#post-apidownloadurl)); the response then lists them under `already_in_library` as `{ "input_index", "song_id", "filename", "match" }`. A batch of only such songs queues nothing (`count: 0`). Default: `false`. |
 
 **Response:**
 
@@ -601,8 +605,12 @@ Download every track of a YouTube Music album/browse URL, resolving the full tra
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `url` | string | yes | YouTube Music album/browse URL |
+| `wait` | boolean | no | `false` queues one job per track and answers at once (see below). Default `true`: answers once every track finished |
+| `skip_if_in_library` | boolean | no | Leave out the tracks the library already has (same rule as [`POST /api/download/url`](#post-apidownloadurl)) |
 
-**Response:** Object mapping `song_id -> downloaded filename` for every track that downloaded successfully (failed tracks are omitted, not raised).
+**Response:** Object mapping `song_id -> downloaded filename` for every track that downloaded successfully (failed tracks are omitted, not raised); with `skip_if_in_library`, tracks already in the library map to their existing file.
+
+With `wait=false`: `{ "album", "album_artist", "track_count", "job_ids" }` right away (plus `already_in_library`, as in [`POST /api/download/batch`](#post-apidownloadbatch), with `skip_if_in_library`). `track_count` is the album's, before any track is left out. Follow the jobs in [`GET /api/queue`](#get-apiqueue).
 
 ---
 
@@ -1015,7 +1023,14 @@ Current cookie configuration.
   "locked": false,
   "path": "/data/cookies.txt",
   "size": 2048,
-  "updated_at": "2026-09-12T02:22:02.282849+00:00"
+  "updated_at": "2026-09-12T02:22:02.282849+00:00",
+  "health": {
+    "state": "valid",
+    "checked_at": "2026-09-12T02:30:00.000000+00:00",
+    "message": null,
+    "refreshed_at": "2026-09-12T02:30:00.000000+00:00",
+    "bot_check_at": null
+  }
 }
 ```
 
@@ -1024,7 +1039,11 @@ Current cookie configuration.
 | `configured` | boolean | Whether a usable cookie file is in place. |
 | `source` | string \| null | `"upload"`, `"env"` (`DOWNTIFY_COOKIES_FILE`), or `null` when unconfigured. |
 | `locked` | boolean | `true` when `DOWNTIFY_COOKIES_FILE` is set — uploads and deletions are then refused. |
-| `size` / `updated_at` | integer \| null | Only reported for an uploaded file. |
+| `size` / `updated_at` | integer \| null | Only reported for an uploaded file. `updated_at` also moves when the keep-alive saves rotated cookies. |
+| `health.state` | string | Last keep-alive result: `"valid"` (YouTube sees a signed-in account), `"signed_out"` (the session was refused — upload new cookies), `"no_account"` (no Google session in the file), `"error"` (YouTube couldn't be checked, see `message`) or `"unknown"` (not checked since start or upload). |
+| `health.checked_at` / `health.refreshed_at` | string \| null | When the session was last checked, and when changed cookies were last saved. |
+| `health.bot_check_at` | string \| null | When a download last hit YouTube's "confirm you're not a bot" wall. |
+| `health.message` | string \| null | Why the last check failed or signed out. |
 
 ---
 
@@ -1039,6 +1058,14 @@ Upload a Netscape `cookies.txt`, replacing any previous one. The body is the **r
 | `400` | Not a valid Netscape cookie jar (empty, binary, or no cookie lines). |
 | `409` | `DOWNTIFY_COOKIES_FILE` is set, so the file is managed outside the UI. |
 | `413` | Larger than 2 MB, so it isn't a cookies.txt. |
+
+---
+
+### `POST /api/cookies/check`
+
+Run the cookie keep-alive now: ask Google to rotate the session cookies, load `youtube.com` with them, save what changed into the cookie file and report whether the session is still signed in. It also runs on its own every `DOWNTIFY_COOKIES_REFRESH_MINUTES` and a few seconds after an upload.
+
+**Response:** the `GET /api/cookies` object with the new `health`. Never fails because YouTube is unreachable — that is `health.state: "error"`.
 
 ---
 
@@ -1250,6 +1277,38 @@ Return the lyrics saved for a library file — used by the player's lyrics panel
 
 ---
 
+### `POST /api/library/lyrics/offset`
+
+Move a song's time-synced lyrics later or sooner, for lyrics that are a little out of step with the audio. Used by the *Adjust lyrics timing* control of the player's lyrics panel. Any user signed in to the web app may (not a paired app), as with editing tags.
+
+**Body:**
+
+```json
+{ "file": "Artist/Album/Song.mp3", "offset_ms": 300 }
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `file` | string | Relative path to the file (as returned by `/list`) |
+| `offset_ms` | integer | Milliseconds to move every line: positive shows them later, negative sooner. Not `0`, at most `60000` either way |
+
+The timestamps themselves are rewritten, so other players see the fix too: the `.lrc` sidecar the player reads and, when the file's tags hold time-synced lyrics (LRC text in `USLT` / `©lyr` / `LYRICS`, or an ID3 `SYLT` frame), those as well, unless the file is read-only. A line moved before the start stops at `00:00.00`. An `[offset:N]` header in the `.lrc` is folded into the times and dropped, since many players ignore it. The change is recorded in the activity log as `lyrics_offset`.
+
+**Response:**
+
+```json
+{
+  "file": "Artist/Album/Song.mp3",
+  "offset_ms": 300,
+  "changed": ["sidecar", "tags"],
+  "synced": "[00:12.30]First line\n[00:15.80]Second line"
+}
+```
+
+`changed` says what was rewritten; `synced` is the new LRC text, as [`GET /lyrics`](#get-lyrics) would now return it. `400` for a bad `offset_ms`, `401` when not signed in, `404` when the file isn't in the library (or is hidden from you) or has no time-synced lyrics, `409` when the `.lrc` can't be written. See [Adjusting the timing](features/lyrics.md#adjusting-the-timing).
+
+---
+
 ## Library
 
 ### `POST /api/library/archive`
@@ -1381,6 +1440,8 @@ Paired apps pick the change up on their next sync: tracks that became hidden arr
 ### `POST /api/library/lookup`
 
 Search / link / top-songs pages send the songs on screen (`{ "songs": [{ "artist", "name" }] }`, up to 200). The response is the matching `GET /tracks` rows already in the library (not the ones hidden from the caller), so "in library" and Play work without downloading the whole catalog.
+
+With `"detailed": true` the answer is per requested song instead: `{ "matches": [{ "input_index", "id", "match", "row" }] }`, one for each song the library has, where `input_index` is its position in `songs`, `id` echoes the song's own `id` when it sent one, `match` is `catalog_id` or `song_key` and `row` is the `GET /tracks` row. Songs may then carry `song_id`, `url`, `youtube_id`, `soundcloud_url` and `isrc` besides artist and title: a song counts as owned with the same Spotify track, the same YouTube video or SoundCloud track a library file was downloaded from (recorded since 3.12), or the same ISRC; otherwise the same lead artist and title, with feat./with credits and remaster tags folded (so a remaster or another release counts, a live version or a remix doesn't). Only songs the caller can see count.
 
 ---
 
@@ -1726,7 +1787,7 @@ A file in the track's own format is used as it is; another is converted to it (`
 
 ### `GET /api/library/replace/protected`
 
-Admin. Whether downloads leave a track alone because its audio was replaced by hand (either way above): `?file=` → `{ "file", "hand_replaced": { "file", "source", "replaced_at" } | null }`. `source` is `youtube`, `soundcloud` or `file`; `replaced_at` is a Unix time.
+Admin. Whether downloads leave a track alone because its audio was replaced by hand (either way above): `?file=` → `{ "file", "hand_replaced": { "file", "source", "replaced_at" } | null }`. `source` is `youtube`, `soundcloud`, `file`, or `disk` (the file was swapped outside Downtify: its audio no longer matches what Downtify downloaded); `replaced_at` is a Unix time. Replacing a track's audio also rejects the YouTube video or SoundCloud track the old audio came from for that song: automatic matches never pick it again (picking it again here takes that back).
 
 With **Download again if the file exists** on, a download that would write over such a file counts it as already downloaded instead, and Library upgrade's audio replacement skips it. **`DELETE`** with the same `?file=` lifts that: `{ "file", "forgotten": true | false }`.
 
@@ -2391,6 +2452,18 @@ Where to buy a song, an album or an artist's music, to support them — the **Su
 
 ## Streaming
 
+### `GET /api/music-video`
+
+Client. The music video saved for a library song (see [Music Videos](features/music-videos.md)): `?file=` the song's library path. **Response:** `{ "video": "Artist/Album/03 - Song-video.mp4", "url": "/api/music-video/file?file=…", "crop": { "width": 464, "height": 360, "x": 88, "y": 0, "video_width": 640, "video_height": 360 } }` — `crop` is the picture's box when black bars are burnt into the video (measured with ffmpeg the first time it is asked for, if not when it was saved), `null` when there are none; `404` when the song has none (or isn't in the library, or is hidden from you).
+
+---
+
+### `GET /api/music-video/file`
+
+Client. That video itself (`?file=` the song's library path, not the video's), with `Range` support for seeking. `404` as above.
+
+---
+
 ### `GET /api/stream/file`
 
 A track's full audio, downloaded once into `/data/stream_cache` and served from this server with seeking support — what plays in the built-in player when the song behind a row isn't downloaded yet. This is what keeps playback working where the browser itself can't reach YouTube (or only slowly): the only YouTube traffic is server-side, and the second play of a track never touches YouTube at all.
@@ -2489,6 +2562,14 @@ Delete the playlist like `DELETE /api/library/playlist`, and also stop tracking 
 
 ---
 
+### `POST /api/playlists/batches/{spotify_playlist_id}/link-existing`
+
+Add the playlist's songs the library already holds to it, without downloading anything: a song counts as held when a library file has the same ISRC, or the same lead artist and title (`feat.`/`with` credits and remaster tags folded away) and a length within 3 seconds. That covers older downloads saved under another name and files in [existing music folders](features/external-library.md). Each song found joins the playlist's catalog (and its M3U and Navidrome playlist, when those are on) and is indexed under its Spotify id. Used by **Add … from library** on a playlist's **Missing** filter.
+
+**Response:** `{ "linked": 4, "missing_count": 2, "playlist_name": "Road Trip" }` — `linked` is how many songs joined the playlist, `missing_count` what it still misses. `404` if the playlist isn't tracked (or isn't theirs, for a user).
+
+---
+
 ### `GET /api/playlists/incomplete`
 
 Tracked playlist downloads that are still missing tracks (one's own for a user).
@@ -2503,7 +2584,9 @@ Queue only the tracks of a Spotify playlist that aren't in the library yet. For 
 
 **Request body:** `{ "spotify_playlist_id": "…" }` or `{ "playlist_url": "https://open.spotify.com/playlist/…" }`, optionally with `"generate_m3u": true`.
 
-**Response:** Same as `POST /api/download/batch`, plus `missing_count` and `playlist_name`. When nothing is missing: `{ "count": 0, "message": "Playlist already complete", "catalog_linked": 12, "playlist_refresh": true }`.
+With **Download again if the file exists** off, songs the library already holds (see [`link-existing`](#post-apiplaylistsbatchesspotify_playlist_idlink-existing)) are added to the playlist first and aren't queued; `linked_from_library` says how many.
+
+**Response:** Same as `POST /api/download/batch`, plus `missing_count`, `playlist_name` and `linked_from_library`. When nothing is missing: `{ "count": 0, "message": "Playlist already complete", "catalog_linked": 12, "linked_from_library": 0, "playlist_refresh": true }`.
 
 ---
 
@@ -3197,7 +3280,9 @@ Public. What an app checks before it has credentials.
     "podcasts": true,
     "discover": true,
     "lyrics": true,
-    "library_sync": true
+    "library_sync": true,
+    "playlist_editing": true,
+    "playlist_delete": true
   }
 }
 ```
@@ -3393,7 +3478,7 @@ Your own account, every account (admins), and what everyone does — see [Users 
 
 ### `GET /api/me`
 
-Client. Who is signed in, and their preferences: `{ "user": { … }, "preferences": { "theme": "dark", "locale": "pt-BR", "show_lyrics": true, "search_albums": false, "show_public_playlists": true }, "playlist_sharing": true }` — a preference not set yet is missing. `playlist_sharing` is whether the admin lets users [share playlists](features/users.md#sharing-playlists).
+Client. Who is signed in, and their preferences: `{ "user": { … }, "preferences": { "theme": "dark", "locale": "pt-BR", "show_lyrics": true, "play_videos": true, "search_albums": false, "show_public_playlists": true }, "playlist_sharing": true }` — a preference not set yet is missing. `playlist_sharing` is whether the admin lets users [share playlists](features/users.md#sharing-playlists).
 
 ---
 
@@ -3411,7 +3496,7 @@ User. Change your password: `{ "current_password": "…", "new_password": "…" 
 
 ### `GET /api/me/preferences` · `PUT /api/me/preferences`
 
-User. Your preferences (Settings → General): `theme` (`dark`/`light`/`system`), `locale`, `show_lyrics`, `search_albums`, `show_public_playlists` (other people's public playlists in your lists; on unless set to `false`, and the playlists you follow show either way). `PUT` merges what it's sent into them and answers the result; other keys are ignored. `search_albums: false` makes `GET /api/albums/search` answer `[]` for you, whatever the server's setting.
+User. Your preferences (Settings → General): `theme` (`dark`/`light`/`system`), `locale`, `show_lyrics`, `play_videos` (show a song's [music video](features/music-videos.md) in Now playing), `search_albums`, `show_public_playlists` (other people's public playlists in your lists; on unless set to `false`, and the playlists you follow show either way). `PUT` merges what it's sent into them and answers the result; other keys are ignored. `search_albums: false` makes `GET /api/albums/search` answer `[]` for you, whatever the server's setting.
 
 ---
 
@@ -3442,6 +3527,36 @@ Admin. Change an account — any of `{ "username", "role", "password" }`. A new 
 ### `DELETE /api/users/{id}`
 
 Admin. Delete an account: its apps are unpaired and its sessions ended. `400` for your own account or the last admin, `404` when unknown. **Response:** `{ "id": 2, "deleted": true }`.
+
+---
+
+### `GET /api/me/storage`
+
+Client. Your [storage quota](features/storage-quotas.md): `{ "used", "limit", "remaining", "unlimited", "exceeded", "source", "own" }` — sizes in bytes; `limit` and `remaining` are `null` when unlimited; `source` is `admin` (admins are never limited), `user` (a quota of your own) or `default`; `own` is your own setting (`null` = the default, `-1` = unlimited).
+
+---
+
+### `GET /api/users/storage`
+
+Admin. Every account's storage: `{ "default", "users": [{ "id", "username", "role", "used", "limit", "remaining", "unlimited", "exceeded", "source", "own" }] }` — `default` is the default quota in bytes, `null` when there is none.
+
+---
+
+### `PUT /api/users/storage/default`
+
+Admin. `{ "quota_bytes": 2147483648 }` sets the default quota; `null` (or `-1`) removes it. `400` for `0`, a negative number other than `-1`, or anything that isn't a number. **Response:** as `GET /api/users/storage`.
+
+---
+
+### `PUT /api/users/{id}/storage`
+
+Admin. `{ "quota_bytes": … }`: a quota of the account's own in bytes, `-1` for unlimited, `null` to follow the default. `404` for an unknown account. **Response:** that account's status, as `GET /api/me/storage`.
+
+---
+
+### `POST /api/users/{id}/storage/reset`
+
+Admin. Forgets which files the account downloaded, so its usage starts from zero. No file is deleted; the account just stops counting as their downloader (it can no longer delete them as such, and with a library for each user they leave its library). **Response:** that account's status.
 
 ---
 
@@ -3488,7 +3603,7 @@ Admin. The activity log, newest first.
 }
 ```
 
-`kind` is one of `login`, `login_failed`, `logout`, `playback` (a song started), `download`, `like`, `unlike`, `delete`, `device_paired`, `device_unpaired`, `user_created`, `user_updated`, `user_deleted`, `password_changed`, `settings_changed` (`summary` lists the setting names, never their values). `client` is the app's name or `Web (Firefox on Linux)`. Entries are kept for 90 days.
+`kind` is one of `login`, `login_failed`, `logout`, `playback` (a song started), `download`, `like`, `unlike`, `delete`, `lyrics_offset` (a song's lyrics timing moved, see [`POST /api/library/lyrics/offset`](#post-apilibrarylyricsoffset)), `device_paired`, `device_unpaired`, `user_created`, `user_updated`, `user_deleted`, `password_changed`, `settings_changed` (`summary` lists the setting names, never their values). `client` is the app's name or `Web (Firefox on Linux)`. Entries are kept for 90 days.
 
 ---
 
@@ -3793,9 +3908,9 @@ Keep the other people's playlists apart from the caller's own (a "Shared with me
 
 ### Mobile playlist writes
 
-`GET /api/server/info` advertises `capabilities.playlist_editing: true` when these routes are available. These routes use stable mobile **track IDs**, and write only **manual** (Library-created) playlists. An inaccessible playlist or track returns `404`; imported playlists and callers without the required write permission return `403`; malformed bodies or fields return `400`; a stale reorder returns `409` without changing the playlist. The library sync index must be ready; otherwise a write returns `503` (`Starting up`). There is no whole-playlist delete route in this mobile API.
+`GET /api/server/info` advertises `capabilities.playlist_editing: true` when these routes are available. These routes use stable mobile **track IDs**, and write only **manual** (Library-created) playlists. An inaccessible playlist or track returns `404`; imported playlists and callers without the required write permission return `403`; malformed bodies or fields return `400`; a stale reorder returns `409` without changing the playlist. The library sync index must be ready; otherwise a write returns `503` (`Starting up`). [`DELETE /api/v1/playlists`](#delete-apiv1playlists) deletes a manual playlist; servers that have it also advertise `capabilities.playlist_delete: true`.
 
-Create and rename require the playlist owner or an admin. Add, remove, and reorder require the owner, an admin, or an editor of a shared playlist. Successful changes notify connected WebSocket clients with `playlists_changed` according to playlist visibility.
+Create, rename and delete require the playlist owner or an admin. Add, remove, and reorder require the owner, an admin, or an editor of a shared playlist. Successful changes notify connected WebSocket clients with `playlists_changed` according to playlist visibility.
 
 All successful writes return the canonical shape `{ "name", "manual", "count", "track_ids" }`, where `track_ids` is in playlist order and includes every repeated occurrence. Rename also returns `previous`; track edits may also return `added`, `removed`, and `already`.
 
@@ -3806,6 +3921,16 @@ Create an empty manual playlist.
 **Body:** `{ "name": "Late night" }`
 
 **Response:** `{ "name": "Late night", "manual": true, "count": 0, "track_ids": [] }`
+
+#### `DELETE /api/v1/playlists`
+
+Delete a manual playlist. Only the list is deleted: its songs stay in the library.
+
+**Query:** `?name=Late night` (or the body `{ "name": "Late night" }`)
+
+**Response:** `{ "name": "Late night", "deleted": true }`
+
+An imported playlist returns `403`, since deleting one deletes its songs from disk (the web [Library](features/library-catalog.md) asks first), and so does the liked-songs playlist. Editors of a shared playlist get `403` too: they may change its songs, not delete it.
 
 #### `POST /api/v1/playlists/rename`
 

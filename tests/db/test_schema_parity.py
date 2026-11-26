@@ -30,6 +30,7 @@ from downtify.discover import DiscoverStore
 from downtify.doctor_audio import AudioHashCache
 from downtify.download_log import DownloadLog
 from downtify.download_queue import PendingDownloads
+from downtify.download_sources import DownloadSources
 from downtify.duplicate_merge import KeptApart
 from downtify.external_playlists import ExternalPlaylistImports
 from downtify.file_providers import FileProviders
@@ -45,6 +46,7 @@ from downtify.likes import LikedTracks
 from downtify.loudness import LoudnessAnalyzer
 from downtify.lyrics_cache import LyricsLookupCache
 from downtify.monitor import PlaylistMonitorDB
+from downtify.music_video import MusicVideos
 from downtify.navidrome_index import NavidromeIndex
 from downtify.playlist_batches import PlaylistBatchStore
 from downtify.playlist_catalog import ManualPlaylistOwners, PlaylistCatalog
@@ -52,6 +54,8 @@ from downtify.playlist_hidden import PlaylistHiddenSongs
 from downtify.playlist_shares import PlaylistShares
 from downtify.playlist_spotify_cache import PlaylistSpotifyCache
 from downtify.podcasts import PodcastStore
+from downtify.slskd_misses import SlskdMisses
+from downtify.storage_quota import StorageQuotas
 from downtify.track_index import TrackIndex
 from downtify.track_owners import TrackOwners
 from downtify.traffic import TrafficCounters
@@ -75,7 +79,9 @@ _LIBRARY_STORES: tuple[Callable[[Path], Any], ...] = (
     PlaylistHiddenSongs,
     FileProviders,
     HandReplacedFiles,
+    DownloadSources,
     DownloadLog,
+    SlskdMisses,
     UsageSnapshots,
     ExternalPlaylistImports,
     PlaylistBatchStore,
@@ -84,6 +90,8 @@ _LIBRARY_STORES: tuple[Callable[[Path], Any], ...] = (
     LyricsLookupCache,
     LikedTracks,
     TrackOwners,
+    StorageQuotas,
+    MusicVideos,
     LibraryVisibility,
     CompilationMarks,
     PodcastStore,

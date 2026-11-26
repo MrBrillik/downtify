@@ -4,7 +4,9 @@ import config from '/src/config.js'
 
 import { v4 as uuidv4 } from 'uuid'
 
+import { restoreParams } from '/src/lib/backups'
 import { coverURL, fileURL, saveName } from '/src/lib/paths'
+import { seedSeenVersion } from '/src/lib/whatsNew'
 
 const API = axios.create({
   baseURL: `${config.PROTOCOL}//${config.BACKEND}:${config.PORT}${config.BASEURL}`,
@@ -47,7 +49,15 @@ function onForbidden(fn) {
   return () => forbiddenListeners.delete(fn)
 }
 
-getVersion()
+// "What's new" starts from the version this browser last ran, before
+// getVersion() overwrites it (lib/whatsNew.js).
+try {
+  seedSeenVersion(localStorage)
+} catch {
+  // No storage: the dialog just never shows.
+}
+// The running version, once known ('0.0.0' when it couldn't be read).
+const versionReady = getVersion()
 
 // ── WebSocket: progress events, reconnecting with backoff ────────────
 const listeners = new Set()
@@ -102,6 +112,15 @@ function ws_onmessage(fn) {
 function ws_onerror(fn) {
   errorListeners.add(fn)
   return () => errorListeners.delete(fn)
+}
+
+// Why downloads didn't come from slskd (admins), and starting it over.
+function getSlskdMisses() {
+  return API.get('/api/slskd/misses')
+}
+
+function resetSlskdMisses() {
+  return API.delete('/api/slskd/misses')
 }
 
 function getVersion() {
@@ -337,6 +356,14 @@ function downloadMissingPlaylistTracks(payload) {
   return API.post('/api/playlists/incomplete/download-missing', payload)
 }
 
+// Add the playlist's songs the library already holds (another name,
+// another folder) without downloading them: `{ linked, missing_count }`.
+function linkExistingPlaylistTracks(spotifyPlaylistId) {
+  return API.post(
+    `/api/playlists/batches/${encodeURIComponent(spotifyPlaylistId)}/link-existing`
+  )
+}
+
 function deletePlaylistBatch(spotifyPlaylistId) {
   return API.delete(
     `/api/playlists/batches/${encodeURIComponent(spotifyPlaylistId)}`
@@ -389,6 +416,12 @@ function lookupLibrarySongs(songs) {
 
 function getLyrics(file) {
   return API.get('/lyrics', { params: { file } })
+}
+
+// Move a song's time-synced lyrics later (> 0) or sooner (< 0), saved in
+// its .lrc and tags (issue #663).
+function shiftLyrics(file, offsetMs) {
+  return API.post('/api/library/lyrics/offset', { file, offset_ms: offsetMs })
 }
 
 function deleteDownload(file) {
@@ -457,6 +490,58 @@ function deleteDownloadsBatch(files) {
 // folder instead of being buffered in memory by fetch.
 function prepareLibraryArchive(files) {
   return API.post('/api/library/archive', { files })
+}
+
+// ── Notifications (Settings; downtify/notification_routes.py) ───────
+function getNotifications() {
+  return API.get('/api/notifications')
+}
+
+function saveNotifications(body) {
+  return API.put('/api/notifications', body)
+}
+
+function testNotification(channel, settings) {
+  return API.post(
+    `/api/notifications/test/${encodeURIComponent(channel)}`,
+    { channel: settings },
+    { timeout: 30000 }
+  )
+}
+
+// ── Backups (Settings > Server; downtify/backup_routes.py) ──────────
+function getBackups() {
+  return API.get('/api/backups')
+}
+
+function createBackup() {
+  return API.post('/api/backups', null, { timeout: 0 })
+}
+
+/** `hours`: 0 (off), 24, 72 or 168. */
+function setBackupSchedule(hours) {
+  return API.put('/api/backups/schedule', { interval_hours: Number(hours) })
+}
+
+function backupDownloadURL(name) {
+  return `/api/backups/${encodeURIComponent(name)}`
+}
+
+/** `parts`: `{settings, watches, songs}` - what to bring back. */
+function restoreBackup(name, parts) {
+  return API.post(`/api/backups/${encodeURIComponent(name)}/restore`, null, {
+    params: restoreParams(parts),
+    timeout: 0,
+  })
+}
+
+// The backup file is sent as the raw request body, like cookies.txt.
+function restoreBackupFile(file, parts) {
+  return API.post('/api/backups/restore', file, {
+    params: restoreParams(parts),
+    headers: { 'Content-Type': 'application/octet-stream' },
+    timeout: 0,
+  })
 }
 
 function libraryArchiveURL(token) {
@@ -690,8 +775,38 @@ function deleteUser(id) {
   return API.delete(`/api/users/${encodeURIComponent(id)}`)
 }
 
+/** A library song's music video: `{video, url}`, 404 when it has none. */
+function getMusicVideo(file) {
+  return API.get('/api/music-video', { params: { file }, quiet: true })
+}
+
 function getUserStats() {
   return API.get('/api/users/stats')
+}
+
+// ── Storage quotas (downtify/storage_quota_routes.py) ────────────────
+function getMyStorage() {
+  return API.get('/api/me/storage')
+}
+
+function getUsersStorage() {
+  return API.get('/api/users/storage')
+}
+
+/** `quotaBytes`: bytes, or null for no default. */
+function setDefaultStorageQuota(quotaBytes) {
+  return API.put('/api/users/storage/default', { quota_bytes: quotaBytes })
+}
+
+/** `quotaBytes`: bytes, -1 for unlimited, null to follow the default. */
+function setUserStorageQuota(id, quotaBytes) {
+  return API.put(`/api/users/${encodeURIComponent(id)}/storage`, {
+    quota_bytes: quotaBytes,
+  })
+}
+
+function resetUserStorage(id) {
+  return API.post(`/api/users/${encodeURIComponent(id)}/storage/reset`)
 }
 
 function getActivity(params = {}) {
@@ -741,6 +856,27 @@ function getServerInfo() {
 
 function renameServer(name) {
   return API.patch('/api/server', { name })
+}
+
+// ── Low-bitrate report (downtify/low_bitrate_routes.py) ───────────
+function lowBitrateReport(threshold) {
+  return API.get('/api/library/low-bitrate', { params: { threshold } })
+}
+
+function lowBitrateSearch(files, includeLossless = false) {
+  return API.post('/api/library/low-bitrate/search', {
+    files,
+    include_lossless: includeLossless,
+  })
+}
+
+// `items` is [{ file, candidate }]: a candidate id a search returned.
+function lowBitrateReplace(items) {
+  return API.post('/api/library/low-bitrate/replace', { items })
+}
+
+function lowBitrateForget(files) {
+  return API.post('/api/library/low-bitrate/forget', { files })
 }
 
 // ── Replacing a track's audio ─────────────────────────────────────
@@ -917,6 +1053,20 @@ function cancelLibraryUpgrade() {
   return API.post('/api/library/upgrade/cancel')
 }
 
+// ── AcoustID (admins): identify songs by their sound ─────────────────
+// The key is saved apart from the settings and never sent back.
+function getAcoustid() {
+  return API.get('/api/acoustid')
+}
+
+function setAcoustidKey(key) {
+  return API.put('/api/acoustid/key', { key })
+}
+
+function testAcoustid() {
+  return API.post('/api/acoustid/test')
+}
+
 // ── Library storage and usage (admins) ───────────────────────────────
 // Size, growth, downloads, duplicates and working copies over `days`.
 function getLibraryUsage(days = 30) {
@@ -956,6 +1106,14 @@ function doctorCancel() {
 }
 
 // Pauses the download queue, then checks every slskd leftover.
+function doctorFormatsScan(formats) {
+  return API.post('/api/doctor/formats/scan', { formats })
+}
+
+function doctorFormatsConvert(files) {
+  return API.post('/api/doctor/formats/convert', { files })
+}
+
 function doctorSlskdScan() {
   return API.post('/api/doctor/slskd/scan')
 }
@@ -975,6 +1133,15 @@ function doctorSlskdRelease() {
 
 function doctorPreview(paths) {
   return API.post('/api/doctor/playlists/preview', { paths })
+}
+
+// Duplicate playlists decided on the page: { merge: [[paths]], apart: [[paths]] }.
+function doctorPlaylistsApply(payload) {
+  return API.post('/api/doctor/playlists/apply', payload)
+}
+
+function doctorPlaylistsApartReset() {
+  return API.post('/api/doctor/playlists/apart/reset')
 }
 
 function doctorMerge(paths) {
@@ -998,6 +1165,63 @@ function doctorDuplicatesKeepReset() {
 
 function doctorNavidromeRepair(payload) {
   return API.post('/api/doctor/navidrome/repair', payload)
+}
+
+// A key for Aurral's Downtify plugin (downtify/aurral_routes.py).
+function aurralKey() {
+  return API.post('/api/aurral/key')
+}
+
+// The Spotify companion (downtify/spotify_companion_routes.py).
+function companionStatus() {
+  return API.get('/api/companion')
+}
+
+function companionSave(payload) {
+  return API.put('/api/companion', payload)
+}
+
+function companionUseAccount() {
+  return API.post('/api/companion/account')
+}
+
+// Instructions and a day-long setup link for an AI agent on the server.
+function companionAgent(address) {
+  return API.post('/api/companion/agent', address ? { address } : {})
+}
+
+// The extension as a ZIP, with a new key and this server's address in it.
+function companionExtension() {
+  return API.post('/api/companion/extension', null, { responseType: 'blob' })
+}
+
+// The Doctor's AI helper (downtify/doctor_ai_routes.py).
+function doctorAiStatus() {
+  return API.get('/api/doctor/ai')
+}
+
+function doctorAiStart() {
+  return API.post('/api/doctor/ai/start')
+}
+
+function doctorAiStop() {
+  return API.post('/api/doctor/ai/stop')
+}
+
+function doctorAiSettings(payload) {
+  return API.put('/api/doctor/ai/settings', payload)
+}
+
+function doctorAiApply(ids) {
+  return API.post('/api/doctor/ai/apply', { ids })
+}
+
+function doctorAiDismiss(ids) {
+  return API.post('/api/doctor/ai/dismiss', { ids })
+}
+
+function doctorAiClear() {
+  return API.post('/api/doctor/ai/clear')
 }
 
 function writePlaylistM3u(payload) {
@@ -1050,6 +1274,11 @@ function deleteCookies() {
   return API.delete('/api/cookies')
 }
 
+// Runs the cookie keep-alive now and answers with the status (health).
+function checkCookies() {
+  return API.post('/api/cookies/check')
+}
+
 function getSettings() {
   return API.get('/api/settings', { params: { client_id: sessionID } })
 }
@@ -1093,6 +1322,8 @@ function editMetadata(trackIds, changes, revisions) {
 }
 
 export default {
+  getSlskdMisses,
+  resetSlskdMisses,
   metadataLibrary,
   editMetadata,
   trashCapabilities,
@@ -1144,6 +1375,7 @@ export default {
   getPlaylistBatches,
   getPlaylistBatchDetails,
   downloadMissingPlaylistTracks,
+  linkExistingPlaylistTracks,
   deletePlaylistBatch,
   downloadFileURL: fileURL,
   downloadSaveName: saveName,
@@ -1158,6 +1390,7 @@ export default {
   updateLibraryVisibility,
   lookupLibrarySongs,
   getLyrics,
+  shiftLyrics,
   deleteDownload,
   deleteDownloadsBatch,
   deleteLibraryPlaylist,
@@ -1209,6 +1442,12 @@ export default {
   updateUser,
   deleteUser,
   getUserStats,
+  getMusicVideo,
+  getMyStorage,
+  getUsersStorage,
+  setDefaultStorageQuota,
+  setUserStorageQuota,
+  resetUserStorage,
   getActivity,
   getNowPlaying,
   reportPlayback,
@@ -1223,6 +1462,19 @@ export default {
   renameServer,
   getServerPort,
   setServerPort,
+  getNotifications,
+  saveNotifications,
+  testNotification,
+  getBackups,
+  createBackup,
+  setBackupSchedule,
+  backupDownloadURL,
+  restoreBackup,
+  restoreBackupFile,
+  lowBitrateReport,
+  lowBitrateSearch,
+  lowBitrateReplace,
+  lowBitrateForget,
   getReplaceCandidates,
   replaceAudio,
   replaceAudioFromFile,
@@ -1265,15 +1517,32 @@ export default {
   doctorScan,
   doctorCancel,
   doctorSlskdScan,
+  doctorFormatsScan,
+  doctorFormatsConvert,
   doctorSlskdFiles,
   doctorSlskdClean,
   doctorSlskdRelease,
   doctorPreview,
   doctorMerge,
+  doctorPlaylistsApply,
+  doctorPlaylistsApartReset,
   doctorDuplicatesMerge,
   doctorDuplicatesKeep,
   doctorDuplicatesKeepReset,
   doctorNavidromeRepair,
+  aurralKey,
+  companionStatus,
+  companionSave,
+  companionUseAccount,
+  companionExtension,
+  companionAgent,
+  doctorAiStatus,
+  doctorAiStart,
+  doctorAiStop,
+  doctorAiSettings,
+  doctorAiApply,
+  doctorAiDismiss,
+  doctorAiClear,
   scanLibraryUsage,
   writePlaylistM3u,
   getQueue,
@@ -1289,12 +1558,17 @@ export default {
   testSlskd,
   testDeemix,
   testNavidrome,
+  getAcoustid,
+  setAcoustidKey,
+  testAcoustid,
   getCookiesStatus,
   uploadCookies,
   deleteCookies,
+  checkCookies,
   check_for_update,
   onMessage,
   ws_onmessage,
   ws_onerror,
   getVersion,
+  versionReady,
 }

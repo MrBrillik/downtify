@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
+from .db.batching import in_short_transactions
 from .db.config import Dialect
 from .db.core import Connection, Database, as_database
 from .library_cache_keys import file_content_key
@@ -225,7 +226,8 @@ class PlaylistCatalog:
         )
 
         linked = 0
-        for row in rows:
+        # A few commits instead of three per row (downtify/db/batching.py).
+        for row in in_short_transactions(self.db, rows):
             pl_name = str(row[0] or '').strip()
             spotify_id = str(row[1] or '').strip() or None
             tid = str(row[2] or '').strip()
@@ -504,7 +506,8 @@ class PlaylistCatalog:
     def all_track_rows(self) -> list[dict[str, Any]]:
         with self._connect() as conn:
             rows = conn.execute(
-                """SELECT playlist_name, track_spotify_id, content_key, filename
+                """SELECT playlist_name, track_spotify_id, content_key,
+                          filename, track_order
                    FROM playlist_tracks"""
             ).fetchall()
         return [
@@ -513,6 +516,7 @@ class PlaylistCatalog:
                 'track_spotify_id': str(row['track_spotify_id']),
                 'content_key': row['content_key'],
                 'filename': _norm_path(str(row['filename'])),
+                'track_order': int(row['track_order'] or 0),
             }
             for row in rows
         ]

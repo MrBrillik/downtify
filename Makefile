@@ -1,6 +1,6 @@
 #!make
 
-DOWNTIFY_VERSION := 3.11.0
+DOWNTIFY_VERSION := 3.14.0
 TARGET := henriquesebastiao/downtify
 
 all: build up
@@ -39,7 +39,7 @@ changelog:
 test:
 	npm run test --prefix frontend
 	npm run test --prefix docs
-	uv run pytest -x -s -v
+	uv run pytest -x -s -v --cov=downtify && uv run coverage html
 
 version:
 	@VERSION=$(word 2,$(MAKECMDGOALS)); \

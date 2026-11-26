@@ -67,6 +67,8 @@ class DownloadItem {
     this.filename = null
     // 1-based place among the waiting jobs (`GET /api/queue`), or null.
     this.position = null
+    // The Monitor watch downloading this song (see lib/queueWatches.js).
+    this.watch = null
     this.updatedAt = Date.now()
   }
   get key() {
@@ -144,6 +146,7 @@ class DownloadItem {
     if (message.message !== undefined) values.message = message.message
     if (message.provider) values.provider = message.provider
     if (message.reused) values.provider = ''
+    if (message.watch) values.watch = message.watch
     this.patch(values)
   }
 }
@@ -233,8 +236,17 @@ function ensureQueuePoll() {
   }, 3000)
 }
 
+// Whether the server's queue has been read once (or failed to be): until
+// then an empty queue is "not known yet", not "nothing queued".
+export const queueSynced = ref(false)
+
 export async function syncQueueFromServer() {
-  const res = await API.getQueue()
+  let res
+  try {
+    res = await API.getQueue()
+  } finally {
+    queueSynced.value = true
+  }
   batchQueueChanges(() => {
     for (const job of res.data || []) {
       if (!job.song) continue
@@ -296,11 +308,19 @@ export function useDownloadManager() {
    * playlist download (folder, M3U, playlist tracking). Without a real
    * playlist behind it (an artist's top songs), `playlistName` and
    * `coverUrl` name the playlist and its cover instead, and `m3u`
-   * overrides the "generate M3U" setting for this batch.
+   * overrides the "generate M3U" setting for this batch. `asAlbum` saves
+   * the playlist as one album named after it, with `coverUrl` as its
+   * cover (issue #531).
    */
   async function fromSongs(
     list,
-    { playlistUrl = '', playlistName = '', coverUrl = '', m3u } = {}
+    {
+      playlistUrl = '',
+      playlistName = '',
+      coverUrl = '',
+      m3u,
+      asAlbum = false,
+    } = {}
   ) {
     const hints = playlistUrl ? { downtify_playlist_url: playlistUrl } : {}
     const songs = list.map((song, i) => ({
@@ -318,6 +338,7 @@ export function useDownloadManager() {
       playlist_name: playlistName,
       cover_url: coverUrl,
       generate_m3u: m3u ?? generateM3u(),
+      ...(asAlbum ? { as_album: true } : {}),
     })
     await syncQueueFromServer().catch(() => {})
     return songs.length
@@ -368,7 +389,10 @@ export function useDownloadManager() {
 
   async function download(song) {
     const item = findItem(song) || appendSong(song)
-    item.setDownloading()
+    // Waiting until the server gives it a download slot: its WebSocket
+    // `downloading` frame moves it to In progress (issue #678).
+    if (!item.isDownloading()) item.setStatus(STATUS.QUEUED)
+    ensureQueuePoll()
     try {
       const res = await API.download(song)
       item.setFile(res.data)
@@ -402,11 +426,32 @@ export function useDownloadManager() {
     }
   }
 
+  // A job that replaced a low-bitrate file (song.low_bitrate) is retried
+  // with the same Soulseek copy - never by downloading a new track.
+  async function replaceLowBitrateAgain(song) {
+    const item = findItem(song)
+    if (item) item.resetForRetry()
+    try {
+      const { data } = await API.lowBitrateReplace([song.low_bitrate])
+      const refused = data?.refused?.[0]
+      if (refused && item) {
+        item.message = refused.code
+        item.setError()
+      }
+    } catch (err) {
+      if (item) {
+        item.message = err?.response?.data?.detail?.code || item.message
+        item.setError()
+      }
+    }
+  }
+
   // `audio` is a YouTube video id, or a SoundCloud track URL when `source`
   // is 'soundcloud'. Setting one clears the other, so a link pasted on an
   // earlier retry can't win over this one.
   function retryWithAudio(song, audio, source = 'youtube') {
     if (song.replace) return replaceAgain(song, audio)
+    if (song.low_bitrate) return replaceLowBitrateAgain(song)
     const audioOverride =
       source === 'soundcloud'
         ? { soundcloud_url: audio, youtube_id: undefined }
@@ -437,6 +482,7 @@ export function useDownloadManager() {
 
   async function retry(song) {
     if (song.replace) return replaceAgain(song, song.replace.video_id)
+    if (song.low_bitrate) return replaceLowBitrateAgain(song)
     const item = findItem(song)
     if (song.url?.trim()) {
       if (item) item.resetForRetry()

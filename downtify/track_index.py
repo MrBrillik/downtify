@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
+from .db.batching import in_short_transactions
 from .db.config import Dialect
 from .db.core import Connection, Database, as_database
 from .library_cache_keys import file_content_key
@@ -108,6 +109,16 @@ class TrackIndex:
         if not tid:
             return None
         return self.lookup(tid)
+
+    def spotify_ids_by_filename(self) -> dict[str, str]:
+        """``{filename: Spotify track id}`` for every indexed file (a
+        backup records which track each library file was)."""
+
+        with self._connect() as conn:
+            rows = conn.execute(
+                'SELECT spotify_track_id, filename FROM library_tracks'
+            ).fetchall()
+        return {str(r['filename']): str(r['spotify_track_id']) for r in rows}
 
     def spotify_id_for_filename(self, filename: str) -> Optional[str]:
         """The Spotify track a library file was downloaded for, if known.
@@ -279,7 +290,8 @@ class TrackIndex:
                WHERE filename IS NOT NULL AND filename != ''""",
         )
         imported = 0
-        for track_id, filename in rows:
+        # A few commits instead of one per row (downtify/db/batching.py).
+        for track_id, filename in in_short_transactions(self.db, rows):
             tid = str(track_id or '').strip()
             if not _SPOTIFY_TRACK_ID.fullmatch(tid):
                 continue
